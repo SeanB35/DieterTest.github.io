@@ -1,0 +1,102 @@
+:root {
+    --primary: #13274F;
+    --accent: #00BFFF;
+    --white: #FFFFFF;
+}
+
+body {
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background: var(--primary);
+    color: var(--white);
+    min-height: 100vh;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+    text-align: center;
+}
+
+.mode-selector {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-bottom: 2rem;
+}
+
+.mode-btn {
+    background: var(--accent);
+    color: var(--primary);
+    border: none;
+    padding: 1rem 2rem;
+    border-radius: 25px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: transform 0.2s;
+}
+
+.game-container {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 2rem;
+    min-height: 400px;
+    position: relative;
+}
+
+/* Math Mode Styles */
+.math-problem {
+    font-size: 4rem;
+    margin: 2rem 0;
+}
+
+.math-input {
+    font-size: 2rem;
+    width: 200px;
+    text-align: center;
+    border-radius: 15px;
+    border: 3px solid var(--accent);
+}
+
+/* Memory Mode Styles */
+.memory-grid {
+    display: grid;
+    gap: 10px;
+    max-width: 500px;
+    margin: 0 auto;
+}
+
+.memory-tile {
+    background: var(--white);
+    border-radius: 10px;
+    aspect-ratio: 1;
+    cursor: pointer;
+    transition: opacity 0.3s;
+}
+
+/* Aim Trainer Styles */
+.aim-target {
+    width: 50px;
+    height: 50px;
+    background: var(--accent);
+    border-radius: 50%;
+    position: absolute;
+    cursor: pointer;
+    transition: transform 0.1s;
+}
+
+.lives {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    display: flex;
+    gap: 0.5rem;
+}
+
+.life {
+    width: 20px;
+    height: 20px;
+    background: var(--accent);
+    border-radius: 50%;
+}
