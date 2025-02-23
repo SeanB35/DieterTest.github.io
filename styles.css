@@ -37,6 +37,10 @@ body {
     transition: transform 0.2s;
 }
 
+.mode-btn:hover {
+    transform: scale(1.05);
+}
+
 .game-container {
     background: rgba(255, 255, 255, 0.1);
     border-radius: 20px;
@@ -57,6 +61,13 @@ body {
     text-align: center;
     border-radius: 15px;
     border: 3px solid var(--accent);
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--white);
+}
+
+.math-input:focus {
+    outline: none;
+    box-shadow: 0 0 10px var(--accent);
 }
 
 /* Memory Mode Styles */
@@ -75,6 +86,10 @@ body {
     transition: opacity 0.3s;
 }
 
+.memory-tile.active {
+    background: var(--accent);
+}
+
 /* Aim Trainer Styles */
 .aim-target {
     width: 50px;
@@ -84,6 +99,10 @@ body {
     position: absolute;
     cursor: pointer;
     transition: transform 0.1s;
+}
+
+.aim-target:active {
+    transform: scale(0.9);
 }
 
 .lives {
@@ -99,4 +118,9 @@ body {
     height: 20px;
     background: var(--accent);
     border-radius: 50%;
+    opacity: 0.5;
+}
+
+.life.active {
+    opacity: 1;
 }

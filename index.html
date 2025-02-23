@@ -19,22 +19,10 @@
             <div class="lives"></div>
             
             <!-- Math Mode -->
-            <script>
-                function getRandomInt() {
-                    return Math.floor(Math.random() * 10);
-                }
-            
-                // Update the content of the math-problem div with the random number
-                document.addEventListener('DOMContentLoaded', function() {
-                    var randomNumber = getRandomInt() + " + " + getRandomInt(); // Generate a random number
-                    document.querySelector('.math-problem').textContent = randomNumber; // Set it as the content
-                });
-            </script>
-            
             <div id="math-mode" class="game-mode">
-                <div class="math-problem"></div> <!-- This will display the random number -->
+                <div class="math-problem"></div>
                 <input type="number" class="math-input" autofocus>
-            </div>            
+            </div>
 
             <!-- Memory Mode -->
             <div id="memory-mode" class="game-mode" style="display: none;">
@@ -47,91 +35,6 @@
             </div>
         </div>
     </div>
-
-    <script>
-        // Game State Management
-        let currentMode = 'math';
-        let lives = 3;
-        let difficulty = 1;
-
-        // Mode Switching
-        document.querySelectorAll('.mode-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                currentMode = btn.dataset.mode;
-                document.querySelectorAll('.game-mode').forEach(mode => {
-                    mode.style.display = 'none';
-                });
-                document.getElementById(`${currentMode}-mode`).style.display = 'block';
-                initGame();
-            });
-        });
-
-        // Math Mode Logic
-        function generateMathProblem() {
-            const operations = ['+', '-', '*', '/'];
-            const op = operations[Math.floor(Math.random() * operations.length)];
-            let a = Math.floor(Math.random() * (difficulty * 10)) + 1;
-            let b = Math.floor(Math.random() * (difficulty * 10)) + 1;
-            
-            // Ensure integer results for division
-            if (op === '/') {
-                a = a * b;
-            }
-            
-            return { problem: `${a} ${op} ${b}`, answer: eval(`${a} ${op} ${b}`) };
-        }
-
-        // Memory Mode Logic
-        function generateMemoryPattern() {
-            const gridSize = 3 + difficulty;
-            const tiles = gridSize * gridSize;
-            const pattern = new Set();
-            
-            while (pattern.size < difficulty + 2) {
-                pattern.add(Math.floor(Math.random() * tiles));
-            }
-            
-            return Array.from(pattern);
-        }
-
-        // Aim Trainer Logic
-        function spawnTarget() {
-            const target = document.querySelector('.aim-target');
-            const container = document.querySelector('.game-container');
-            const bounds = container.getBoundingClientRect();
-            
-            target.style.left = `${Math.random() * (bounds.width - 50)}px`;
-            target.style.top = `${Math.random() * (bounds.height - 50)}px`;
-        }
-
-        // Initialize Game
-        function initGame() {
-            lives = 3;
-            difficulty = 1;
-            updateLives();
-            
-            if (currentMode === 'math') {
-                const input = document.querySelector('.math-input');
-                input.addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter') {
-                        // Check answer and generate new problem
-                    }
-                });
-                newProblem();
-            } else if (currentMode === 'memory') {
-                // Initialize memory grid
-            } else {
-                // Initialize aim trainer
-                spawnTarget();
-            }
-        }
-
-        function updateLives() {
-            // Update lives display
-        }
-
-        // Start with math mode
-        initGame();
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>
