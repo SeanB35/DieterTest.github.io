@@ -4,6 +4,7 @@ let lives = 3;
 let difficulty = 1;
 let currentProblem;
 let timeouts = [];
+let mathMode = 'mixed';
 
 // Mode Switching
 document.querySelectorAll('.mode-btn').forEach(btn => {
@@ -18,15 +19,41 @@ document.querySelectorAll('.mode-btn').forEach(btn => {
     });
 });
 
+// Math Mode Selection
+document.querySelectorAll('.math-mode-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        mathMode = btn.dataset.mathMode;
+        initGame();
+    });
+});
+
 // Math Mode Logic
 function generateMathProblem() {
-    const operations = ['+', '-', '*', '/'];
-    const op = operations[Math.floor(Math.random() * operations.length)];
     let a = Math.floor(Math.random() * (difficulty * 10)) + 1;
     let b = Math.floor(Math.random() * (difficulty * 10)) + 1;
-    
-    if (op === '/') a = a * b;
-    
+    let op;
+
+    switch (mathMode) {
+        case 'addition':
+            op = '+';
+            break;
+        case 'subtraction':
+            op = '-';
+            break;
+        case 'multiplication':
+            op = '*';
+            break;
+        case 'division':
+            op = '/';
+            a = a * b; // Ensure a is divisible by b
+            break;
+        default:
+            const operations = ['+', '-', '*', '/'];
+            op = operations[Math.floor(Math.random() * operations.length)];
+            if (op === '/') a = a * b;
+            break;
+    }
+
     return { problem: `${a} ${op} ${b}`, answer: eval(`${a} ${op} ${b}`) };
 }
 
@@ -34,6 +61,21 @@ function newMathProblem() {
     currentProblem = generateMathProblem();
     document.querySelector('.math-problem').textContent = currentProblem.problem;
     document.querySelector('.math-input').value = '';
+}
+
+function setupMathMode() {
+    newMathProblem();
+    document.querySelector('.math-input').addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+            const userAnswer = parseFloat(e.target.value);
+            if (userAnswer === currentProblem.answer) {
+                difficulty++;
+                newMathProblem();
+            } else {
+                loseLife();
+            }
+        }
+    });
 }
 
 // Memory Mode Logic
@@ -111,6 +153,7 @@ function initGame() {
     difficulty = 1;
     correctClicks = 0;
     updateLives();
+    document.getElementById('game-over').style.display = 'none';
     
     if (currentMode === 'math') {
         setupMathMode();
@@ -122,34 +165,12 @@ function initGame() {
     }
 }
 
-function setupMathMode() {
-    newMathProblem();
-    document.querySelector('.math-input').addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-            const userAnswer = parseFloat(e.target.value);
-            if (userAnswer === currentProblem.answer) {
-                difficulty++;
-                newMathProblem();
-            } else {
-                loseLife();
-            }
-        }
-    });
-}
-
-function handleAimClick() {
-    this.style.transform = 'scale(1.2)';
-    difficulty++;
-    clearTimeouts();
-    spawnTarget();
-}
-
 function loseLife() {
     lives--;
     updateLives();
     if (lives <= 0) {
-        alert(`Game Over! Score: ${difficulty}`);
-        initGame();
+        document.getElementById('game-over').style.display = 'block';
+        document.getElementById('final-score').textContent = difficulty;
     }
 }
 
@@ -169,5 +190,13 @@ function clearTimeouts() {
 }
 
 // Initialize
-initGame();
-document.querySelector('.aim-target').addEventListener('click', handleAimClick);
+document.addEventListener("DOMContentLoaded", () => {
+    document.body.insertAdjacentHTML('beforeend', `
+        <div id="game-over" style="display:none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0, 0, 0, 0.8); color: white; padding: 2rem; text-align: center; border-radius: 10px;">
+            <h2>Game Over!</h2>
+            <p>Final Score: <span id="final-score"></span></p>
+            <button onclick="initGame()">Restart</button>
+        </div>
+    `);
+    initGame();
+});

@@ -34,11 +34,37 @@ body {
     border-radius: 25px;
     cursor: pointer;
     font-weight: bold;
-    transition: transform 0.2s;
+    transition: transform 0.2s, background 0.3s;
 }
 
 .mode-btn:hover {
     transform: scale(1.05);
+    background: rgba(0, 191, 255, 0.8);
+}
+
+.math-mode-selector {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+}
+
+.math-mode-btn {
+    background: rgba(0, 191, 255, 0.5);
+    color: var(--white);
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 15px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    font-weight: normal;
+    transition: transform 0.2s, background 0.3s;
+}
+
+.math-mode-btn:hover {
+    transform: scale(1.05);
+    background: rgba(0, 191, 255, 0.7);
 }
 
 .game-container {
