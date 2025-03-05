@@ -1,15 +1,19 @@
 :root {
-    --primary: #13274F;
-    --accent: #00BFFF;
-    --white: #FFFFFF;
+    --primary: #1a1a2e;
+    --accent: #00bfff;
+    --correct: #00ff7f;
+    --error: #ff4444;
+    --white: #ffffff;
+    --transition: all 0.3s ease;
 }
 
 body {
     margin: 0;
-    font-family: 'Segoe UI', sans-serif;
-    background: var(--primary);
+    font-family: 'Poppins', sans-serif;
+    background: linear-gradient(135deg, var(--primary) 0%, #16213e 100%);
     color: var(--white);
     min-height: 100vh;
+    overflow-x: hidden;
 }
 
 .container {
@@ -19,81 +23,85 @@ body {
     text-align: center;
 }
 
-.mode-selector {
+.title {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    text-shadow: 0 0 15px rgba(0, 191, 255, 0.5);
+}
+
+.score-board {
     display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding: 1rem;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+}
+
+.mode-selector {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
     gap: 1rem;
-    justify-content: center;
     margin-bottom: 2rem;
 }
 
 .mode-btn {
-    background: var(--accent);
-    color: var(--primary);
-    border: none;
-    padding: 1rem 2rem;
-    border-radius: 25px;
+    background: rgba(0, 191, 255, 0.2);
+    border: 2px solid var(--accent);
+    color: var(--white);
+    padding: 1.5rem;
+    border-radius: 15px;
     cursor: pointer;
-    font-weight: bold;
-    transition: transform 0.2s, background 0.3s;
+    font-size: 1.1rem;
+    transition: var(--transition);
+    backdrop-filter: blur(5px);
 }
 
 .mode-btn:hover {
-    transform: scale(1.05);
-    background: rgba(0, 191, 255, 0.8);
-}
-
-.math-mode-selector {
-    display: flex;
-    gap: 0.5rem;
-    justify-content: center;
-    flex-wrap: wrap;
-    margin-bottom: 1.5rem;
-}
-
-.math-mode-btn {
-    background: rgba(0, 191, 255, 0.5);
-    color: var(--white);
-    border: none;
-    padding: 0.5rem 1rem;
-    border-radius: 15px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    font-weight: normal;
-    transition: transform 0.2s, background 0.3s;
-}
-
-.math-mode-btn:hover {
-    transform: scale(1.05);
-    background: rgba(0, 191, 255, 0.7);
+    background: rgba(0, 191, 255, 0.4);
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 191, 255, 0.3);
 }
 
 .game-container {
-    background: rgba(255, 255, 255, 0.1);
+    position: relative;
+    background: rgba(255, 255, 255, 0.05);
     border-radius: 20px;
     padding: 2rem;
     min-height: 400px;
-    position: relative;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
 }
 
 /* Math Mode Styles */
 .math-problem {
     font-size: 4rem;
     margin: 2rem 0;
+    text-shadow: 0 0 15px rgba(0, 191, 255, 0.5);
 }
 
 .math-input {
     font-size: 2rem;
     width: 200px;
-    text-align: center;
+    padding: 1rem;
+    border: 2px solid var(--accent);
     border-radius: 15px;
-    border: 3px solid var(--accent);
     background: rgba(255, 255, 255, 0.1);
     color: var(--white);
+    transition: var(--transition);
 }
 
 .math-input:focus {
     outline: none;
-    box-shadow: 0 0 10px var(--accent);
+    box-shadow: 0 0 20px var(--accent);
+}
+
+.feedback {
+    height: 30px;
+    margin-top: 1rem;
+    font-weight: bold;
 }
 
 /* Memory Mode Styles */
@@ -105,15 +113,35 @@ body {
 }
 
 .memory-tile {
-    background: var(--white);
+    background: rgba(255, 255, 255, 0.1);
     border-radius: 10px;
     aspect-ratio: 1;
-    cursor: pointer;
-    transition: opacity 0.3s;
+    transition: var(--transition);
+    position: relative;
+    overflow: hidden;
 }
 
-.memory-tile.active {
+.memory-tile::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
     background: var(--accent);
+    opacity: 0;
+    transition: var(--transition);
+}
+
+.memory-tile.active::after {
+    opacity: 1;
+}
+
+.timer-bar {
+    height: 5px;
+    background: var(--accent);
+    margin-top: 1rem;
+    transform-origin: left;
 }
 
 /* Aim Trainer Styles */
@@ -125,28 +153,77 @@ body {
     position: absolute;
     cursor: pointer;
     transition: transform 0.1s;
+    box-shadow: 0 0 20px var(--accent);
 }
 
-.aim-target:active {
-    transform: scale(0.9);
-}
-
-.lives {
+.target-timer {
     position: absolute;
-    top: 1rem;
-    right: 1rem;
+    width: 100%;
+    height: 100%;
+    border: 2px solid var(--white);
+    border-radius: 50%;
+    animation: targetTimer 2s linear forwards;
+}
+
+@keyframes targetTimer {
+    from { stroke-dashoffset: 0; }
+    to { stroke-dashoffset: 100%; }
+}
+
+.accuracy {
+    position: absolute;
+    bottom: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 1.2rem;
+}
+
+/* Lives System */
+.lives {
     display: flex;
     gap: 0.5rem;
 }
 
 .life {
-    width: 20px;
-    height: 20px;
+    width: 25px;
+    height: 25px;
     background: var(--accent);
     border-radius: 50%;
-    opacity: 0.5;
+    opacity: 0.3;
+    transition: var(--transition);
 }
 
 .life.active {
     opacity: 1;
+}
+
+/* Game Over Screen */
+#game-over {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, 0.9);
+    padding: 2rem;
+    border-radius: 15px;
+    text-align: center;
+    display: none;
+    backdrop-filter: blur(10px);
+    border: 1px solid var(--accent);
+}
+
+.restart-btn {
+    background: var(--accent);
+    color: var(--primary);
+    border: none;
+    padding: 1rem 2rem;
+    border-radius: 10px;
+    margin: 1rem;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.restart-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 15px var(--accent);
 }
