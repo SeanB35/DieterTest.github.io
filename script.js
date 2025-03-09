@@ -1,235 +1,299 @@
-// Game State Management
-let currentMode = 'math';
-let lives = 3;
-let difficulty = 1;
-let currentProblem;
-let timeouts = [];
-let mathMode = 'mixed';
-let correctClicks = 0;
-let totalShots = 0;
-let totalHits = 0;
-
-// DOM Elements
-const mathProblem = document.querySelector('.math-problem');
-const mathInput = document.querySelector('.math-input');
-const memoryGrid = document.querySelector('.memory-grid');
-const aimTarget = document.querySelector('.aim-target');
-const livesDisplay = document.querySelector('.lives');
-const feedback = document.querySelector('.feedback');
-const accuracyDisplay = document.querySelector('.accuracy');
-
-// Mode Switching
-document.querySelectorAll('.mode-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-        currentMode = btn.dataset.mode;
-        document.querySelectorAll('.game-mode').forEach(mode => {
-            mode.style.display = 'none';
+class DieterBench {
+    constructor() {
+      // Modes: reaction, click, memory, math
+      this.modes = ['reaction', 'click', 'memory', 'math'];
+      this.currentMode = 'reaction';
+      this.score = 0;
+      this.lives = 3;
+      this.streak = 0;
+      this.mathOperation = 'mixed';
+      // Flag for the click speed test
+      this.clickTestRunning = false;
+      this.init();
+    }
+  
+    init() {
+      this.setupEventListeners();
+      this.setupMathMode();
+      this.setupMemoryGrid();
+      this.switchMode('reaction');
+    }
+  
+    setupEventListeners() {
+      // Mode switching
+      document.querySelectorAll('.mode-btn').forEach((btn) => {
+        btn.addEventListener('click', (e) => {
+          const mode = e.target.closest('button').dataset.mode;
+          this.switchMode(mode);
         });
-        document.getElementById(`${currentMode}-mode`).style.display = 'block';
-        clearTimeouts();
-        initGame();
-    });
-});
-
-// Math Mode Logic
-document.querySelectorAll('.math-mode-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-        mathMode = btn.dataset.mathMode;
-        initGame();
-    });
-});
-
-function generateMathProblem() {
-    let a = Math.floor(Math.random() * (difficulty * 10)) + 1;
-    let b = Math.floor(Math.random() * (difficulty * 10)) + 1;
-    let op;
-
-    switch(mathMode) {
-        case 'addition': op = '+'; break;
-        case 'subtraction': op = '-'; break;
-        case 'multiplication': op = '*'; break;
-        case 'division':
-            op = '/';
-            a = a * b;
-            break;
-        default:
-            const operations = ['+', '-', '*', '/'];
-            op = operations[Math.floor(Math.random() * operations.length)];
-            if(op === '/') a = a * b;
+      });
+  
+      // Math operations
+      document.querySelectorAll('.op-btn').forEach((btn) => {
+        btn.addEventListener('click', (e) =>
+          this.setMathOperation(e.target.dataset.op)
+        );
+      });
+  
+      // Math input: on Enter key, check answer
+      document
+        .querySelector('.math-input')
+        .addEventListener('keypress', (e) => {
+          if (e.key === 'Enter') this.checkMathAnswer();
+        });
+  
+      // Reaction mode click listener
+      document
+        .querySelector('.reaction-box')
+        .addEventListener('click', () => this.handleReactionClick());
     }
-
-    return { 
-        problem: `${a} ${op} ${b}`, 
-        answer: eval(`${a} ${op} ${b}`) 
-    };
-}
-
-function handleMathInput(e) {
-    if(e.key === 'Enter') {
-        const userAnswer = parseFloat(mathInput.value);
-        
-        if(userAnswer === currentProblem.answer) {
-            difficulty++;
-            feedback.textContent = 'Correct!';
-            feedback.style.color = '#00ff7f';
-            newMathProblem();
-        } else {
-            feedback.textContent = 'Incorrect!';
-            feedback.style.color = '#ff4444';
-            loseLife();
-        }
-        mathInput.value = '';
+  
+    switchMode(newMode) {
+      // Remove active classes for all modes/buttons
+      this.modes.forEach((mode) => {
+        document.getElementById(`${mode}-mode`).classList.remove('active');
+        document
+          .querySelector(`[data-mode="${mode}"]`)
+          .classList.remove('active');
+      });
+      // Activate the new mode
+      document.getElementById(`${newMode}-mode`).classList.add('active');
+      document.querySelector(`[data-mode="${newMode}"]`).classList.add('active');
+      this.currentMode = newMode;
+  
+      // Mode-specific initialization
+      if (newMode === 'reaction') {
+        this.initReactionTest();
+      } else if (newMode === 'click') {
+        this.newClickTest();
+      } else if (newMode === 'memory') {
+        this.newMemoryGame();
+      } else if (newMode === 'math') {
+        this.newMathProblem();
+      }
     }
-}
-
-function setupMathMode() {
-    mathInput.addEventListener('keypress', handleMathInput);
-    newMathProblem();
-}
-
-function newMathProblem() {
-    currentProblem = generateMathProblem();
-    mathProblem.textContent = currentProblem.problem;
-}
-
-// Memory Mode Logic
-function createMemoryGrid() {
-    memoryGrid.innerHTML = '';
-    const gridSize = 3 + difficulty;
-    const pattern = generateMemoryPattern();
-    
-    memoryGrid.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`;
-    
-    for(let i = 0; i < gridSize ** 2; i++) {
+  
+    // =============== MATH MODE ===============
+    setupMathMode() {
+      // Additional math mode setup if needed
+    }
+  
+    setMathOperation(op) {
+      this.mathOperation = op;
+      document.querySelectorAll('.op-btn').forEach((btn) =>
+        btn.classList.toggle('active', btn.dataset.op === op)
+      );
+      this.newMathProblem();
+    }
+  
+    newMathProblem() {
+      let a, b, op;
+      let opToUse =
+        this.mathOperation === 'mixed'
+          ? ['+', '-', '×', '÷'][Math.floor(Math.random() * 4)]
+          : this.mathOperation;
+      const operations = {
+        '+': () => [Math.floor(Math.random() * 100), Math.floor(Math.random() * 100), '+'],
+        '-': () => [Math.floor(Math.random() * 100), Math.floor(Math.random() * 100), '-'],
+        '×': () => [Math.floor(Math.random() * 12) + 1, Math.floor(Math.random() * 12) + 1, '×'],
+        '÷': () => {
+          const b = Math.floor(Math.random() * 12) + 1;
+          const a = b * (Math.floor(Math.random() * 12) + 1);
+          return [a, b, '÷'];
+        },
+      };
+      [a, b, op] = operations[opToUse]();
+      this.currentAnswer = eval(
+        `${a} ${op === '×' ? '*' : op === '÷' ? '/' : op} ${b}`
+      );
+      document.querySelector('.math-problem').textContent = `${a} ${op} ${b} = ?`;
+      document.querySelector('.math-input').value = '';
+    }
+  
+    checkMathAnswer() {
+      const inputField = document.querySelector('.math-input');
+      const userAnswer = parseFloat(inputField.value);
+      if (isNaN(userAnswer)) return;
+      if (userAnswer === this.currentAnswer) {
+        this.updateScore(10);
+        this.streak++;
+        this.newMathProblem();
+      } else {
+        this.loseLife();
+        this.streak = 0;
+      }
+      document.getElementById('streak').textContent = this.streak;
+    }
+  
+    // =============== REACTION MODE ===============
+    initReactionTest() {
+      this.reactionTimes = [];
+      this.updateAverage();
+      this.startReactionTest();
+    }
+  
+    startReactionTest() {
+      const box = document.querySelector('.reaction-box');
+      box.classList.remove('ready');
+      box.classList.add('waiting');
+      box.textContent = 'Wait for blue...';
+      setTimeout(() => {
+        box.classList.remove('waiting');
+        box.classList.add('ready');
+        box.textContent = 'CLICK NOW!';
+        this.startTime = Date.now();
+      }, Math.random() * 3000 + 1000);
+    }
+  
+    handleReactionClick() {
+      if (this.currentMode !== 'reaction') return;
+      const box = document.querySelector('.reaction-box');
+      if (box.classList.contains('ready')) {
+        const reactionTime = Date.now() - this.startTime;
+        this.reactionTimes.push(reactionTime);
+        this.updateAverage();
+        this.startReactionTest();
+      } else {
+        box.textContent = 'Too soon!';
+        setTimeout(() => this.startReactionTest(), 1000);
+      }
+    }
+  
+    updateAverage() {
+      const average =
+        this.reactionTimes.length > 0
+          ? Math.round(
+              this.reactionTimes.reduce((a, b) => a + b) / this.reactionTimes.length
+            )
+          : 0;
+      document.getElementById('average').textContent = average;
+    }
+  
+    // =============== MEMORY MODE ===============
+    setupMemoryGrid() {
+      const grid = document.querySelector('.memory-grid');
+      grid.innerHTML = '';
+      for (let i = 0; i < 16; i++) {
         const tile = document.createElement('div');
         tile.className = 'memory-tile';
-        if(pattern.includes(i)) tile.dataset.correct = true;
-        tile.addEventListener('click', handleTileClick);
-        memoryGrid.appendChild(tile);
+        tile.addEventListener('click', () => this.handleMemoryClick(i));
+        grid.appendChild(tile);
+      }
     }
-
-    showMemoryPattern(pattern);
-}
-
-function generateMemoryPattern() {
-    const gridSize = 3 + difficulty;
-    const pattern = new Set();
-    while(pattern.size < difficulty + 2) {
-        pattern.add(Math.floor(Math.random() * gridSize ** 2));
+  
+    newMemoryGame() {
+      const grid = document.querySelector('.memory-grid');
+      grid.innerHTML = '';
+      this.setupMemoryGrid();
+      this.memoryPattern = [];
+      this.memoryProgress = 0;
+      this.generateMemoryPattern();
+      this.showMemoryPattern();
     }
-    return Array.from(pattern);
-}
-
-function showMemoryPattern(pattern) {
-    pattern.forEach(index => {
-        memoryGrid.children[index].classList.add('active');
-    });
-    
-    timeouts.push(setTimeout(() => {
-        memoryGrid.querySelectorAll('.memory-tile').forEach(tile => {
-            tile.classList.remove('active');
-        });
-    }, 1000 + difficulty * 500));
-}
-
-function handleTileClick(e) {
-    if(e.target.dataset.correct) {
-        e.target.style.background = '#00ff7f';
-        correctClicks++;
-        if(correctClicks === difficulty + 2) {
-            difficulty++;
-            correctClicks = 0;
-            createMemoryGrid();
+  
+    generateMemoryPattern() {
+      const patternLength = Math.floor(this.score / 5) + 2;
+      while (this.memoryPattern.length < patternLength) {
+        const newTile = Math.floor(Math.random() * 16);
+        if (!this.memoryPattern.includes(newTile)) {
+          this.memoryPattern.push(newTile);
         }
-    } else {
-        loseLife();
+      }
     }
-    e.target.removeEventListener('click', handleTileClick);
-}
-
-// Aim Mode Logic
-function spawnTarget() {
-    const container = document.querySelector('.game-container');
-    const bounds = container.getBoundingClientRect();
-    
-    aimTarget.style.left = `${Math.random() * (bounds.width - 50)}px`;
-    aimTarget.style.top = `${Math.random() * (bounds.height - 50)}px`;
-    
-    timeouts.push(setTimeout(() => {
-        if(currentMode === 'aim') loseLife();
-    }, 2000 - difficulty * 150));
-}
-
-function handleAimClick() {
-    totalHits++;
-    totalShots++;
-    difficulty++;
-    updateAccuracy();
-    spawnTarget();
-}
-
-function updateAccuracy() {
-    const accuracy = totalShots > 0 
-        ? Math.round((totalHits / totalShots) * 100)
-        : 100;
-    accuracyDisplay.textContent = `Accuracy: ${accuracy}%`;
-}
-
-// Core Game Functions
-function initGame() {
-    lives = 3;
-    difficulty = 1;
-    correctClicks = 0;
-    totalShots = 0;
-    totalHits = 0;
-    updateLives();
-    updateAccuracy();
-    document.getElementById('game-over').style.display = 'none';
-
-    mathInput.removeEventListener('keypress', handleMathInput);
-    aimTarget.removeEventListener('click', handleAimClick);
-
-    switch(currentMode) {
-        case 'math':
-            setupMathMode();
-            break;
-        case 'memory':
-            createMemoryGrid();
-            break;
-        case 'aim':
-            aimTarget.addEventListener('click', handleAimClick);
-            spawnTarget();
-            break;
+  
+    showMemoryPattern() {
+      const tiles = document.querySelectorAll('.memory-tile');
+      tiles.forEach((tile) => tile.classList.remove('active'));
+      this.memoryAcceptInput = false;
+      let i = 0;
+      const interval = setInterval(() => {
+        if (i >= this.memoryPattern.length) {
+          clearInterval(interval);
+          this.memoryAcceptInput = true;
+          return;
+        }
+        const index = this.memoryPattern[i];
+        tiles[index].classList.add('active');
+        setTimeout(() => tiles[index].classList.remove('active'), 500);
+        i++;
+      }, 1000);
     }
-}
-
-function loseLife() {
-    lives--;
-    updateLives();
-    if(lives <= 0) {
-        showGameOver();
+  
+    handleMemoryClick(index) {
+      if (!this.memoryAcceptInput) return;
+      const tiles = document.querySelectorAll('.memory-tile');
+      if (this.memoryPattern[this.memoryProgress] === index) {
+        tiles[index].classList.add('active');
+        setTimeout(() => tiles[index].classList.remove('active'), 200);
+        this.memoryProgress++;
+        if (this.memoryProgress === this.memoryPattern.length) {
+          this.updateScore(20);
+          this.newMemoryGame();
+        }
+      } else {
+        this.loseLife();
+        this.newMemoryGame();
+      }
     }
-}
-
-function updateLives() {
-    livesDisplay.innerHTML = Array(3).fill()
-        .map((_, i) => `<div class="life ${i < lives ? 'active' : ''}"></div>`)
-        .join('');
-}
-
-function showGameOver() {
-    const gameOver = document.getElementById('game-over');
-    gameOver.style.display = 'block';
-    document.getElementById('final-score').textContent = difficulty - 1;
-}
-
-function clearTimeouts() {
-    timeouts.forEach(clearTimeout);
-    timeouts = [];
-}
-
-// Initialize
-document.addEventListener('DOMContentLoaded', () => {
-    document.querySelector('.restart-btn').addEventListener('click', initGame);
-    initGame();
-});
+  
+    // =============== CLICK SPEED MODE ===============
+    newClickTest() {
+      this.clickCount = 0;
+      this.clickTestRunning = false;
+      const clickBox = document.querySelector('.click-box');
+      clickBox.textContent = "Click to start";
+      document.getElementById('clicks').textContent = this.clickCount;
+      clickBox.onclick = () => this.handleClickTest();
+    }
+  
+    handleClickTest() {
+      const clickBox = document.querySelector('.click-box');
+      if (!this.clickTestRunning) {
+        // Start the test on the first click
+        this.clickTestRunning = true;
+        this.clickCount = 1;
+        document.getElementById('clicks').textContent = this.clickCount;
+        clickBox.textContent = "Click as fast as you can!";
+        this.clickTestTimer = setTimeout(() => this.endClickTest(), 5000);
+      } else {
+        // Count subsequent clicks
+        this.clickCount++;
+        document.getElementById('clicks').textContent = this.clickCount;
+      }
+    }
+  
+    endClickTest() {
+      const clickBox = document.querySelector('.click-box');
+      clickBox.textContent = `Time's up! You clicked ${this.clickCount} times. Click to try again.`;
+      this.clickTestRunning = false;
+    }
+  
+    // =============== CORE FUNCTIONS ===============
+    updateScore(points) {
+      this.score += points;
+      document.getElementById('score').textContent = this.score;
+    }
+  
+    loseLife() {
+      this.lives = Math.max(0, this.lives - 1);
+      document.getElementById('lives').textContent = this.lives;
+      if (this.lives === 0) {
+        setTimeout(() => {
+          alert(`Game Over! Score: ${this.score}`);
+          this.resetGame();
+        }, 100);
+      }
+    }
+  
+    resetGame() {
+      this.score = 0;
+      this.lives = 3;
+      this.streak = 0;
+      document.getElementById('score').textContent = 0;
+      document.getElementById('lives').textContent = 3;
+      document.getElementById('streak').textContent = 0;
+    }
+  }
+  
+  const game = new DieterBench();
+  

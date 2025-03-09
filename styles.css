@@ -1,229 +1,195 @@
 :root {
-    --primary: #1a1a2e;
-    --accent: #00bfff;
-    --correct: #00ff7f;
-    --error: #ff4444;
-    --white: #ffffff;
-    --transition: all 0.3s ease;
-}
-
-body {
+    --primary: #0a192f;
+    --accent: #64ffda;
+    --secondary: #1e4d8b;
+    --error: #ff5252;
+    --background: #020c1b;
+    --card-bg: #172a45;
+    --text: #ccd6f6;
+  }
+  
+  body {
     margin: 0;
-    font-family: 'Poppins', sans-serif;
-    background: linear-gradient(135deg, var(--primary) 0%, #16213e 100%);
-    color: var(--white);
+    font-family: 'Fira Code', monospace;
+    background: var(--background);
+    color: var(--text);
     min-height: 100vh;
-    overflow-x: hidden;
-}
-
-.container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 2rem;
-    text-align: center;
-}
-
-.title {
-    font-size: 3rem;
-    margin-bottom: 1rem;
-    text-shadow: 0 0 15px rgba(0, 191, 255, 0.5);
-}
-
-.score-board {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 2rem;
-    padding: 1rem;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 15px;
-}
-
-.mode-selector {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    place-items: center;
+  }
+  
+  .container {
+    width: 100%;
+    max-width: 800px;
+    padding: 2rem;
+  }
+  
+  .title {
+    text-align: center;
+    font-size: 2.5rem;
+    margin-bottom: 2rem;
+    color: var(--accent);
+    text-shadow: 0 0 15px rgba(100, 255, 218, 0.3);
+  }
+  
+  .mode-selector {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
     gap: 1rem;
     margin-bottom: 2rem;
-}
-
-.mode-btn {
-    background: rgba(0, 191, 255, 0.2);
-    border: 2px solid var(--accent);
-    color: var(--white);
-    padding: 1.5rem;
-    border-radius: 15px;
+  }
+  
+  .mode-btn {
+    background: var(--card-bg);
+    border: 1px solid var(--secondary);
+    padding: 1rem;
+    border-radius: 8px;
+    color: var(--text);
     cursor: pointer;
-    font-size: 1.1rem;
-    transition: var(--transition);
-    backdrop-filter: blur(5px);
-}
-
-.mode-btn:hover {
-    background: rgba(0, 191, 255, 0.4);
-    transform: translateY(-3px);
-    box-shadow: 0 5px 15px rgba(0, 191, 255, 0.3);
-}
-
-.game-container {
-    position: relative;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 20px;
+    transition: all 0.2s ease;
+  }
+  
+  .mode-btn.active {
+    background: var(--secondary);
+    border-color: var(--accent);
+    box-shadow: 0 0 15px rgba(100, 255, 218, 0.2);
+  }
+  
+  .game-container {
+    background: var(--card-bg);
+    border-radius: 12px;
     padding: 2rem;
     min-height: 400px;
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-}
-
-/* Math Mode Styles */
-.math-problem {
-    font-size: 4rem;
-    margin: 2rem 0;
-    text-shadow: 0 0 15px rgba(0, 191, 255, 0.5);
-}
-
-.math-input {
+    position: relative;
+    border: 1px solid var(--secondary);
+  }
+  
+  .game-mode {
+    display: none;
+  }
+  
+  .game-mode.active {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
+  }
+  
+  /* Math Mode Styles */
+  .math-header {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+  
+  .math-problem {
+    font-size: 3rem;
+    margin: 1rem 0;
+    color: var(--accent);
+  }
+  
+  .math-input {
     font-size: 2rem;
     width: 200px;
-    padding: 1rem;
-    border: 2px solid var(--accent);
-    border-radius: 15px;
-    background: rgba(255, 255, 255, 0.1);
-    color: var(--white);
-    transition: var(--transition);
-}
-
-.math-input:focus {
-    outline: none;
-    box-shadow: 0 0 20px var(--accent);
-}
-
-.feedback {
-    height: 30px;
-    margin-top: 1rem;
-    font-weight: bold;
-}
-
-/* Memory Mode Styles */
-.memory-grid {
-    display: grid;
-    gap: 10px;
-    max-width: 500px;
-    margin: 0 auto;
-}
-
-.memory-tile {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 10px;
-    aspect-ratio: 1;
-    transition: var(--transition);
-    position: relative;
-    overflow: hidden;
-}
-
-.memory-tile::after {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: var(--accent);
-    opacity: 0;
-    transition: var(--transition);
-}
-
-.memory-tile.active::after {
-    opacity: 1;
-}
-
-.timer-bar {
-    height: 5px;
-    background: var(--accent);
-    margin-top: 1rem;
-    transform-origin: left;
-}
-
-/* Aim Trainer Styles */
-.aim-target {
-    width: 50px;
-    height: 50px;
-    background: var(--accent);
-    border-radius: 50%;
-    position: absolute;
-    cursor: pointer;
-    transition: transform 0.1s;
-    box-shadow: 0 0 20px var(--accent);
-}
-
-.target-timer {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    border: 2px solid var(--white);
-    border-radius: 50%;
-    animation: targetTimer 2s linear forwards;
-}
-
-@keyframes targetTimer {
-    from { stroke-dashoffset: 0; }
-    to { stroke-dashoffset: 100%; }
-}
-
-.accuracy {
-    position: absolute;
-    bottom: 1rem;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 1.2rem;
-}
-
-/* Lives System */
-.lives {
-    display: flex;
-    gap: 0.5rem;
-}
-
-.life {
-    width: 25px;
-    height: 25px;
-    background: var(--accent);
-    border-radius: 50%;
-    opacity: 0.3;
-    transition: var(--transition);
-}
-
-.life.active {
-    opacity: 1;
-}
-
-/* Game Over Screen */
-#game-over {
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: rgba(0, 0, 0, 0.9);
-    padding: 2rem;
-    border-radius: 15px;
+    padding: 0.5rem;
+    background: transparent;
+    border: 2px solid var(--secondary);
+    color: var(--text);
+    border-radius: 8px;
     text-align: center;
-    display: none;
-    backdrop-filter: blur(10px);
-    border: 1px solid var(--accent);
-}
-
-.restart-btn {
-    background: var(--accent);
-    color: var(--primary);
-    border: none;
-    padding: 1rem 2rem;
-    border-radius: 10px;
-    margin: 1rem;
+  }
+  
+  .math-operations {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .op-btn {
+    background: rgba(30, 77, 139, 0.3);
+    border: 1px solid var(--secondary);
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
     cursor: pointer;
-    transition: var(--transition);
-}
-
-.restart-btn:hover {
-    transform: scale(1.05);
-    box-shadow: 0 0 15px var(--accent);
-}
+  }
+  
+  .op-btn.active {
+    background: var(--secondary);
+  }
+  
+  /* Memory Game Styles */
+  .memory-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    max-width: 500px;
+  }
+  
+  .memory-tile {
+    width: 80px;
+    height: 80px;
+    background: var(--background);
+    border: 2px solid var(--secondary);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .memory-tile.active {
+    background: var(--accent);
+    transform: scale(0.95);
+  }
+  
+  /* Sequence Game Styles */
+  .sequence-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+  }
+  
+  .sequence-tile {
+    width: 60px;
+    height: 60px;
+    background: var(--background);
+    border: 2px solid var(--secondary);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  .sequence-tile.active {
+    background: var(--accent);
+  }
+  
+  /* Reaction Test Styles */
+  .reaction-box {
+    width: 300px;
+    height: 300px;
+    background: var(--background);
+    border: 2px solid var(--secondary);
+    border-radius: 12px;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+  }
+  
+  .reaction-box.ready {
+    background: var(--secondary);
+    border-color: var(--accent);
+  }
+  
+  .stats {
+    font-size: 1.2rem;
+    color: var(--accent);
+  }
+  
+  .score-board {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 2rem;
+    padding: 1rem;
+    background: var(--card-bg);
+    border-radius: 8px;
+  }
+  

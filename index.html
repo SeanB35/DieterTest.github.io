@@ -1,72 +1,64 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DieterTest - Human Benchmark</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
-    <link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DieterBench</title>
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-    <div class="container">
-        <h1 class="title animate__animated animate__bounceIn">DieterTest</h1>
-        <div class="score-board">
-            <div class="score">Score: <span id="current-score">1</span></div>
-            <div class="lives"></div>
-        </div>
-        
-        <div class="mode-selector">
-            <button class="mode-btn" data-mode="math">🧮 Math</button>
-            <button class="mode-btn" data-mode="memory">🎮 Memory</button>
-            <button class="mode-btn" data-mode="aim">🎯 Aim</button>
-        </div>
+  <div class="container">
+    <h1 class="title">DieterBench</h1>
 
-        
-
-        <div class="game-container">
-            <!-- Math Mode -->
-            <div id="math-mode" class="game-mode active">
-                <div class="math-mode-selector">
-                    <button class="math-mode-btn" data-math-mode="addition">+ Addition</button>
-                    <button class="math-mode-btn" data-math-mode="subtraction">- Subtraction</button>
-                    <button class="math-mode-btn" data-math-mode="multiplication">× Multiplication</button>
-                    <button class="math-mode-btn" data-math-mode="division">÷ Division</button>
-                    <button class="math-mode-btn" data-math-mode="mixed">🌪️ Mixed</button>
-                </div>
-                <div class="math-problem"></div>
-                <input type="number" class="math-input" autofocus>
-                <div class="feedback"></div>
-            </div>
-
-            <!-- Memory Mode -->
-            <div id="memory-mode" class="game-mode">
-                <div class="memory-grid"></div>
-                <div class="timer-bar"></div>
-            </div>
-
-            <!-- Aim Trainer -->
-            <div id="aim-mode" class="game-mode">
-                <div class="aim-target">
-                    <div class="target-timer"></div>
-                </div>
-                <div class="accuracy">Accuracy: 100%</div>
-            </div>
-        </div>
-
-        <!-- Game Over Screen -->
-        <div id="game-over">
-            <h2>Game Over! 🎮</h2>
-            <p>Final Score: <span id="final-score">0</span></p>
-            <div class="game-over-buttons">
-                <button class="restart-btn">🔄 Restart</button>
-                <button class="mode-switch-btn">🎮 Change Mode</button>
-            </div>
-        </div>
+    <div class="mode-selector">
+      <button class="mode-btn active" data-mode="reaction">⚡ Reaction</button>
+      <button class="mode-btn" data-mode="click">👆 Click Speed</button>
+      <button class="mode-btn" data-mode="memory">🧠 Memory</button>
+      <button class="mode-btn" data-mode="math">➗ Math</button>
     </div>
 
-    <audio id="correct-sound" src="https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3"></audio>
-    <audio id="error-sound" src="https://assets.mixkit.co/active_storage/sfx/2597/2597-preview.mp3"></audio>
+    <div class="game-container">
+      <!-- Reaction Test -->
+      <div id="reaction-mode" class="game-mode active">
+        <div class="reaction-box waiting">Click to start</div>
+        <div class="stats">Average: <span id="average">0</span>ms</div>
+      </div>
 
-    <script src="script.js"></script>
+      <!-- Click Speed Test -->
+      <div id="click-mode" class="game-mode">
+        <div class="click-box">Click to start</div>
+        <div class="stats">Clicks: <span id="clicks">0</span></div>
+      </div>
+
+      <!-- Memory Game -->
+      <div id="memory-mode" class="game-mode">
+        <div class="memory-grid"></div>
+        <div class="stats">Score: <span id="memory-score">0</span></div>
+      </div>
+
+      <!-- Math Test -->
+      <div id="math-mode" class="game-mode">
+        <div class="math-header">
+          <div class="math-problem">3 + 5 = ?</div>
+          <input type="number" class="math-input" autofocus />
+        </div>
+        <div class="math-operations">
+          <button class="op-btn active" data-op="mixed">🌪️ Mixed</button>
+          <button class="op-btn" data-op="+">+ Addition</button>
+          <button class="op-btn" data-op="-">- Subtraction</button>
+          <button class="op-btn" data-op="×">× Multiplication</button>
+          <button class="op-btn" data-op="÷">÷ Division</button>
+        </div>
+        <div class="stats">Streak: <span id="streak">0</span></div>
+      </div>
+    </div>
+
+    <div class="score-board">
+      <div class="score">Score: <span id="score">0</span></div>
+      <div class="lives">Lives: <span id="lives">3</span></div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
 </body>
 </html>
