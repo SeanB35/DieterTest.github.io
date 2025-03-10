@@ -192,4 +192,11 @@
     background: var(--card-bg);
     border-radius: 8px;
   }
+
+  #rank {
+    font-weight: bold;
+    color: var(--accent);
+    text-shadow: 0 0 10px rgba(100, 255, 218, 0.7);
+    font-size: 1.5rem;
+}
   

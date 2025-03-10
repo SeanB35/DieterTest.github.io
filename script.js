@@ -7,7 +7,6 @@ class DieterBench {
       this.lives = 3;
       this.streak = 0;
       this.mathOperation = 'mixed';
-      // Flag for the click speed test
       this.clickTestRunning = false;
       this.init();
     }
@@ -17,6 +16,7 @@ class DieterBench {
       this.setupMathMode();
       this.setupMemoryGrid();
       this.switchMode('reaction');
+      this.updateRank();
     }
   
     setupEventListeners() {
@@ -272,6 +272,7 @@ class DieterBench {
     updateScore(points) {
       this.score += points;
       document.getElementById('score').textContent = this.score;
+      this.updateRank();
     }
   
     loseLife() {
@@ -292,8 +293,20 @@ class DieterBench {
       document.getElementById('score').textContent = 0;
       document.getElementById('lives').textContent = 3;
       document.getElementById('streak').textContent = 0;
+      this.updateRank();
+    }
+
+    updateRank() {
+      let rank;
+      if (this.score >= 1000) rank = 'Wilson Rank';
+      else if (this.score >= 500) rank = 'Professor Cuomo Rank';
+      else if (this.score >= 250) rank = 'Freakbiss Rank';
+      else if (this.score >= 100) rank = 'Fomas Dieterlito Rank';
+      else rank = 'Tom Z-Mode Rank';
+      
+      document.getElementById('rank').textContent = rank;
     }
   }
-  
+
   const game = new DieterBench();
   
