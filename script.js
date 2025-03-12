@@ -149,15 +149,20 @@ class DieterBench {
       if (this.currentMode !== 'reaction') return;
       const box = document.querySelector('.reaction-box');
       if (box.classList.contains('ready')) {
-        const reactionTime = Date.now() - this.startTime;
-        this.reactionTimes.push(reactionTime);
-        this.updateAverage();
-        this.startReactionTest();
+          const reactionTime = Date.now() - this.startTime;
+          
+          // Update real-time reaction time
+          document.getElementById('reaction-time').textContent = reactionTime;
+  
+          // Add to the array and update average
+          this.reactionTimes.push(reactionTime);
+          this.updateAverage();
+          this.startReactionTest();
       } else {
-        box.textContent = 'Too soon!';
-        setTimeout(() => this.startReactionTest(), 1000);
+          box.textContent = 'Too soon!';
+          setTimeout(() => this.startReactionTest(), 1000);
       }
-    }
+  }
   
     updateAverage() {
       const average =

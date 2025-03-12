@@ -199,4 +199,28 @@
     text-shadow: 0 0 10px rgba(100, 255, 218, 0.7);
     font-size: 1.5rem;
 }
-  
+
+.stats {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 1rem;
+  background: var(--background);
+  border: 2px solid var(--accent);
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(100, 255, 218, 0.2);
+  text-align: center;
+}
+
+.stats p {
+  margin: 0;
+  font-size: 1.2rem;
+  color: var(--accent);
+  text-shadow: 0 0 10px rgba(100, 255, 218, 0.3);
+}
+
+.stats span {
+  font-weight: bold;
+  color: var(--text);
+}
