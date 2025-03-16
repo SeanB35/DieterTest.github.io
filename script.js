@@ -1,4 +1,5 @@
 class DieterBench {
+
     constructor() {
       // Modes: reaction, click, memory, math
       this.modes = ['reaction', 'click', 'memory', 'math'];
@@ -148,6 +149,7 @@ class DieterBench {
     handleReactionClick() {
       if (this.currentMode !== 'reaction') return;
       const box = document.querySelector('.reaction-box');
+      
       if (box.classList.contains('ready')) {
           const reactionTime = Date.now() - this.startTime;
           
@@ -157,6 +159,11 @@ class DieterBench {
           // Add to the array and update average
           this.reactionTimes.push(reactionTime);
           this.updateAverage();
+          
+          // Show percentile
+          this.showPercentile('reaction', reactionTime);
+          
+          // Start next test
           this.startReactionTest();
       } else {
           box.textContent = 'Too soon!';
@@ -196,33 +203,41 @@ class DieterBench {
       this.showMemoryPattern();
     }
   
-    generateMemoryPattern() {
-      const patternLength = Math.floor(this.score / 5) + 2;
-      while (this.memoryPattern.length < patternLength) {
-        const newTile = Math.floor(Math.random() * 16);
-        if (!this.memoryPattern.includes(newTile)) {
+    // In the DieterBench class
+generateMemoryPattern() {
+  const patternLength = Math.floor(this.score / 10) + 2; // Make it slightly easier to start
+  this.memoryPattern = [];
+  while (this.memoryPattern.length < patternLength) {
+      const newTile = Math.floor(Math.random() * 16);
+      if (this.memoryPattern[this.memoryPattern.length - 1] !== newTile) { // Prevent duplicates
           this.memoryPattern.push(newTile);
-        }
       }
-    }
+  }
+}
+
+showMemoryPattern() {
+  const tiles = document.querySelectorAll('.memory-tile');
+  tiles.forEach(tile => tile.classList.remove('active'));
+  this.memoryAcceptInput = false;
   
-    showMemoryPattern() {
-      const tiles = document.querySelectorAll('.memory-tile');
-      tiles.forEach((tile) => tile.classList.remove('active'));
-      this.memoryAcceptInput = false;
-      let i = 0;
-      const interval = setInterval(() => {
-        if (i >= this.memoryPattern.length) {
-          clearInterval(interval);
+  let i = 0;
+  const showNextTile = () => {
+      if (i >= this.memoryPattern.length) {
           this.memoryAcceptInput = true;
           return;
-        }
-        const index = this.memoryPattern[i];
-        tiles[index].classList.add('active');
-        setTimeout(() => tiles[index].classList.remove('active'), 500);
-        i++;
-      }, 1000);
-    }
+      }
+      
+      const index = this.memoryPattern[i];
+      tiles[index].classList.add('active');
+      setTimeout(() => {
+          tiles[index].classList.remove('active');
+          i++;
+          setTimeout(showNextTile, 500); // Add pause between tiles
+      }, 1000); // Show each tile for 1 second
+  };
+  
+  showNextTile();
+}
   
     handleMemoryClick(index) {
       if (!this.memoryAcceptInput) return;
@@ -242,36 +257,44 @@ class DieterBench {
     }
   
     // =============== CLICK SPEED MODE ===============
-    newClickTest() {
+    // Replace existing click mode methods with this:
+newClickTest() {
+  this.clickCount = 0;
+  this.clickTestRunning = false;
+  this.clickStartTime = null;
+  const clickBox = document.querySelector('.click-box');
+  clickBox.textContent = "Click to start";
+  document.getElementById('clicks').textContent = this.clickCount;
+  clickBox.onclick = () => this.handleClickTest();
+}
+
+handleClickTest() {
+  const clickBox = document.querySelector('.click-box');
+  
+  if (!this.clickTestRunning) {
+      this.clickTestRunning = true;
       this.clickCount = 0;
-      this.clickTestRunning = false;
-      const clickBox = document.querySelector('.click-box');
-      clickBox.textContent = "Click to start";
-      document.getElementById('clicks').textContent = this.clickCount;
-      clickBox.onclick = () => this.handleClickTest();
-    }
+      this.clickStartTime = Date.now();
+      clickBox.textContent = "GO! Click as fast as you can!";
+      this.clickTestTimer = setTimeout(() => this.endClickTest(), 5000);
+      // Add rapid click listener
+      clickBox.onclick = () => {
+          this.clickCount++;
+          document.getElementById('clicks').textContent = this.clickCount;
+      };
+  }
+}
+
+endClickTest() {
+  const clickBox = document.querySelector('.click-box');
+  const cps = (this.clickCount / 5).toFixed(1);
+  clickBox.textContent = `${this.clickCount} clicks (${cps}/s) - Click to restart`;
+  clickBox.onclick = () => this.newClickTest();
+  this.clickTestRunning = false;
   
-    handleClickTest() {
-      const clickBox = document.querySelector('.click-box');
-      if (!this.clickTestRunning) {
-        // Start the test on the first click
-        this.clickTestRunning = true;
-        this.clickCount = 1;
-        document.getElementById('clicks').textContent = this.clickCount;
-        clickBox.textContent = "Click as fast as you can!";
-        this.clickTestTimer = setTimeout(() => this.endClickTest(), 5000);
-      } else {
-        // Count subsequent clicks
-        this.clickCount++;
-        document.getElementById('clicks').textContent = this.clickCount;
-      }
-    }
-  
-    endClickTest() {
-      const clickBox = document.querySelector('.click-box');
-      clickBox.textContent = `Time's up! You clicked ${this.clickCount} times. Click to try again.`;
-      this.clickTestRunning = false;
-    }
+  // Show percentile
+  this.showPercentile('click', cps);
+}
   
     // =============== CORE FUNCTIONS ===============
     updateScore(points) {
@@ -311,6 +334,67 @@ class DieterBench {
       
       document.getElementById('rank').textContent = rank;
     }
+    // Benchmark data (simplified example)
+benchmarks = {
+  reaction: [250, 200, 180, 150, 120],
+  click: [5, 7, 9, 11, 13], // clicks per second
+  memory: [3, 4, 5, 6, 7], // sequence length
+  math: [10, 20, 30, 40, 50] // streak
+};
+
+showPercentile(mode, value) {
+  const benchmarks = this.benchmarks[mode];
+  let percentile = 0;
+  
+  benchmarks.forEach((threshold, index) => {
+      if (value > threshold) {
+          percentile = (index + 1) * 20;
+      }
+  });
+  
+  this.createChart(mode, percentile);
+}
+
+createChart(mode, percentile) {
+  const ctx = document.getElementById('percentileChart');
+  new Chart(ctx, {
+      type: 'bar',
+      data: {
+          labels: ['Your Performance'],
+          datasets: [{
+              label: `Percentile (Top ${100 - percentile}%)`,
+              data: [percentile],
+              backgroundColor: 'rgba(100, 255, 218, 0.5)',
+              borderColor: 'var(--accent)',
+              borderWidth: 2
+          }]
+      },
+      options: {
+          scales: {
+              y: {
+                  beginAtZero: true,
+                  max: 100,
+                  ticks: {
+                      color: 'var(--text)',
+                      callback: value => value + '%'
+                  }
+              },
+              x: {
+                  ticks: {
+                      color: 'var(--text)'
+                  }
+              }
+          },
+          plugins: {
+              legend: {
+                  labels: {
+                      color: 'var(--text)'
+                  }
+              }
+          }
+      }
+  });
+}
   }
 
   const game = new DieterBench();

@@ -224,3 +224,13 @@
   font-weight: bold;
   color: var(--text);
 }
+.percentile-graph {
+  margin-top: 2rem;
+  padding: 1rem;
+  background: var(--card-bg);
+  border-radius: 8px;
+}
+
+canvas {
+  max-height: 300px;
+}
