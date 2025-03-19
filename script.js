@@ -397,5 +397,39 @@ createChart(mode, percentile) {
 }
   }
 
+  document.addEventListener("DOMContentLoaded", () => {
+    function startClickSpeedGame(duration) {
+      let timeLeft = duration;
+      const timeBar = document.getElementById("time-bar");
+      timeBar.style.width = "100%";
+      timeBar.style.backgroundColor = "green";
+  
+      const interval = setInterval(() => {
+        timeLeft -= 100;
+        const percent = (timeLeft / duration) * 100;
+        timeBar.style.width = percent + "%";
+  
+        // Change color based on remaining time
+        if (percent > 50) {
+          timeBar.style.backgroundColor = "green";
+        } else if (percent > 25) {
+          timeBar.style.backgroundColor = "yellow";
+        } else {
+          timeBar.style.backgroundColor = "red";
+        }
+  
+        if (timeLeft <= 0) {
+          clearInterval(interval);
+          timeBar.style.width = "0%";
+        }
+      }, 100);
+    }
+  
+    // Example trigger for testing
+    document.querySelector(".click-box").addEventListener("click", () => {
+      startClickSpeedGame(5000); // 5 seconds countdown
+    });
+  });
+
   const game = new DieterBench();
   
