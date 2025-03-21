@@ -36,6 +36,19 @@
     <div class="game-container">
       <!-- Reaction Test -->
       <div id="reaction-mode" class="game-mode active">
+        <div class="progress-indicator">
+          <!-- 10 bubbles to show progress -->
+          <div class="progress-bubble"></div>
+          <div class="progress-bubble"></div>
+          <div class="progress-bubble"></div>
+          <div class="progress-bubble"></div>
+          <div class="progress-bubble"></div>
+          <div class="progress-bubble"></div>
+          <div class="progress-bubble"></div>
+          <div class="progress-bubble"></div>
+          <div class="progress-bubble"></div>
+          <div class="progress-bubble"></div>
+        </div>
         <div class="reaction-box waiting">Click to start</div>
         <div class="stats">
           <p>Reaction Time: <span id="reaction-time">0</span> ms</p>
@@ -44,12 +57,13 @@
       </div>
 
       <!-- Click Speed Test -->
-      <div id="click-mode" class="game-mode">
-        <div class="time-bar-container">
-          <div class="time-bar" id="time-bar"></div>
+      <div id="click-mode" class="mode-content">
+        <div class="time-bar">
+          <div class="time-left"></div>
         </div>
+        <button id="start-click-test" class="start-button">Start Click Test</button>
         <div class="click-box">Click to start</div>
-        <div class="stats">Clicks: <span id="clicks">0</span></div>
+        <div id="clicks">0</div>
       </div>
 
       <!-- Memory Game -->
