@@ -25,6 +25,13 @@ class DieterBench {
       currentStreak: 0,
       losses: 0
     };
+    this.reactionTestRunning = false;
+    this.reactionTestStarted = false;
+    this.clickTimes = []; // Track timestamps of each click
+    this.clickPoints = 0; // Track points earned in the current game
+    this.mathCorrect = 0; // Track correct answers
+    this.mathWrong = 0; // Track wrong answers
+    this.mathPoints = 0; // Track points earned in the current game
     this.init();
   }
 
@@ -42,6 +49,20 @@ class DieterBench {
         const mode = e.target.closest('button').dataset.mode;
         this.switchMode(mode);
       });
+    });
+
+    document.getElementById('start-reaction-test').addEventListener('click', () => {
+      if (!this.reactionTestRunning) {
+        // Start the test for the first time
+        this.startReactionTest();
+        this.reactionTestRunning = true;
+        this.reactionTestStarted = true;
+        document.getElementById('start-reaction-test').textContent = 'Restart Test';
+      } else {
+        // Restart the test immediately
+        this.initReactionTest();
+        this.startReactionTest(); // Automatically start the test after resetting
+      }
     });
 
     document.querySelectorAll('.op-btn').forEach((btn) => {
@@ -86,9 +107,15 @@ class DieterBench {
   initReactionTest() {
     this.reactionTimes = [];
     this.tryCount = 0;
+    this.reactionTestRunning = false; // Reset the flag
+    this.reactionTestStarted = false; // Reset the flag
     this.updateAverage();
     this.updateProgressIndicator();
-    this.startReactionTest();
+    document.getElementById('start-reaction-test').textContent = 'Start Reaction Test';
+    document.querySelector('.reaction-box').textContent = 'Click to start';
+    document.querySelector('.reaction-box').classList.add('waiting');
+    document.querySelector('.reaction-box').classList.remove('ready');
+    document.querySelector('.reaction-box').style.pointerEvents = 'none'; // Disable clicks initially
   }
 
   startReactionTest() {
@@ -98,6 +125,7 @@ class DieterBench {
     }
 
     const box = document.querySelector('.reaction-box');
+    box.style.pointerEvents = 'auto'; // Enable clicks on the reaction box
     box.classList.remove('ready');
     box.classList.add('waiting');
     box.textContent = 'Wait for green...';
@@ -114,7 +142,8 @@ class DieterBench {
   }
 
   handleReactionClick() {
-    if (this.currentMode !== 'reaction') return;
+    // Only allow clicks if the test has started
+    if (!this.reactionTestStarted) return;
 
     const box = document.querySelector('.reaction-box');
     if (box.classList.contains('ready')) {
@@ -162,16 +191,41 @@ class DieterBench {
   }
 
   endReactionTest() {
+    // Calculate results
     const totalPoints = this.reactionTimes.reduce((sum, time) => sum + this.calculatePoints(time), 0);
-    const retry = confirm(
-      `Game Over!\nTotal Points: ${totalPoints}\nAverage Reaction Time: ${this.calculateAverage()} ms\n\nDo you want to retry?`
-    );
+    const averageTime = this.calculateAverage();
+  
+    // Show results modal
+    this.showReactionResults(totalPoints, averageTime);
+  
+    // Reset the test
+    this.initReactionTest();
+  }
 
-    if (retry) {
-      this.initReactionTest();
-    } else {
-      this.switchMode('menu');
-    }
+  showReactionResults(totalPoints, averageTime) {
+    const modal = document.getElementById('reactionResultModal');
+    const resultText = document.getElementById('reactionResultText');
+
+    // Display results
+    resultText.innerHTML = `
+      🏆 Total Points: ${totalPoints}<br>
+      ⏱️ Average Time: ${averageTime} ms
+    `;
+
+    // Show the modal
+    modal.style.display = 'flex';
+  }
+
+  closeReactionModal() {
+    const modal = document.getElementById('reactionResultModal');
+    modal.style.display = 'none';
+  }
+
+  setupModalListeners() {
+    // Add event listener for the close button
+    document.getElementById('closeReactionModalBtn').addEventListener('click', () => {
+      this.closeReactionModal();
+    });
   }
 
   calculatePoints(reactionTime) {
@@ -210,23 +264,25 @@ class DieterBench {
 
   startClickTest() {
     if (this.clickTestRunning) return;
-    
 
-    
     this.clickTestRunning = true;
     this.clickCount = 0;
+    this.clickTimes = []; // Reset click timestamps
+    this.clickPoints = 0; // Reset points
+    this.updateCurrentResults(); // Update the results box
+
     const clickBox = document.querySelector('.click-box');
     clickBox.textContent = 'GO! Click anywhere!';
     document.getElementById('clicks').textContent = '0';
-    
+
     // Start progress animation
     const progressBar = document.querySelector('.time-bar-progress');
     progressBar.style.transform = 'scaleX(1)';
     progressBar.style.transition = 'transform 5s linear';
-    
+
     // Add click listener
     document.addEventListener('click', this.handleClickTestBound);
-    
+
     // End after 5 seconds
     this.clickTimer = setTimeout(() => {
       this.endClickTest();
@@ -236,17 +292,41 @@ class DieterBench {
   handleClickTest() {
     if (this.clickTestRunning) {
       this.clickCount++;
+      this.clickTimes.push(Date.now()); // Record the timestamp of the click
+      this.updateCurrentResults(); // Update the results box
       document.getElementById('clicks').textContent = this.clickCount;
     }
   }
 
+  updateCurrentResults() {
+    // Calculate clicks per second (cps)
+    let cps = 0;
+    if (this.clickTimes.length > 1) {
+      const totalTime = (this.clickTimes[this.clickTimes.length - 1] - this.clickTimes[0]) / 1000; // Convert to seconds
+      cps = (this.clickCount / totalTime).toFixed(1);
+    }
+
+    // Calculate points (example: 1 point per click)
+    this.clickPoints = this.clickCount;
+
+    // Update the current results box
+    document.getElementById('current-clicks').textContent = this.clickCount;
+    document.getElementById('current-cps').textContent = cps;
+    document.getElementById('current-points').textContent = this.clickPoints;
+  }
+
   endClickTest() {
     if (!this.clickTestRunning) return;
-    
+
     this.clickTestRunning = false;
     document.removeEventListener('click', this.handleClickTestBound);
-    
-    const cps = (this.clickCount / 5).toFixed(1);
+
+    const cps = (this.clickCount / 5).toFixed(1); // Calculate final CPS
+
+    // Add points earned to the total score
+    this.updateScore(this.clickPoints);
+
+    // Show results
     this.showClickResults(this.clickCount, cps);
     this.showPercentile('click', cps);
   }
@@ -496,7 +576,7 @@ async showErrorFeedback() {
     [a, b, op] = operations[opToUse]();
     this.currentAnswer = eval(`${a} ${op === '×' ? '*' : op === '÷' ? '/' : op} ${b}`);
     document.querySelector('.math-problem').textContent = `${a} ${op} ${b} = ?`;
-    document.querySelector('.math-input').value = '';
+    document.querySelector('.math-input').focus(); // Ensure the input field is focused
   }
 
   checkMathAnswer() {
@@ -505,14 +585,64 @@ async showErrorFeedback() {
     if (isNaN(userAnswer)) return;
 
     if (userAnswer === this.currentAnswer) {
-      this.updateScore(10);
-      this.streak++;
-      this.newMathProblem();
+      this.mathCorrect++; // Increment correct answers
+      this.updateScore(10); // Award points
+      this.mathPoints += 10; // Track points earned in this game
+      this.streak++; // Increment streak
     } else {
+      this.mathWrong++; // Increment wrong answers
       this.loseLife();
-      this.streak = 0;
+      this.streak = 0; // Reset streak
     }
+
+    // Update the current progress box
+    this.updateMathProgress();
+
+    // Update the streak display
     document.getElementById('streak').textContent = this.streak;
+
+    // Clear the input field and generate a new problem
+    inputField.value = '';
+    this.newMathProblem();
+  }
+
+  updateMathProgress() {
+    // Calculate accuracy
+    const totalAttempts = this.mathCorrect + this.mathWrong;
+    const accuracy = totalAttempts > 0 ? ((this.mathCorrect / totalAttempts) * 100).toFixed(1) : 0;
+
+    // Update the current progress box
+    document.getElementById('math-correct').textContent = this.mathCorrect;
+    document.getElementById('math-wrong').textContent = this.mathWrong;
+    document.getElementById('math-accuracy').textContent = `${accuracy}%`;
+    document.getElementById('math-streak').textContent = this.streak;
+    document.getElementById('math-points').textContent = this.mathPoints;
+  }
+
+  showMathResults() {
+    const modal = document.getElementById('mathResultModal');
+    const resultText = document.getElementById('mathResultText');
+
+    // Calculate accuracy
+    const totalAttempts = this.mathCorrect + this.mathWrong;
+    const accuracy = totalAttempts > 0 ? ((this.mathCorrect / totalAttempts) * 100).toFixed(1) : 0;
+
+    // Display results
+    resultText.innerHTML = `
+      🏆 Correct Answers: ${this.mathCorrect}<br>
+      ❌ Wrong Answers: ${this.mathWrong}<br>
+      🎯 Accuracy: ${accuracy}%<br>
+      🔥 Longest Streak: ${this.streak}<br>
+      💯 Points Earned: ${this.mathPoints}
+    `;
+
+    // Show the modal
+    modal.style.display = 'flex';
+  }
+
+  closeMathModal() {
+    const modal = document.getElementById('mathResultModal');
+    modal.style.display = 'none';
   }
 
   // ================= CORE FUNCTIONS =================
@@ -525,9 +655,9 @@ async showErrorFeedback() {
   loseLife() {
     this.lives = Math.max(0, this.lives - 1);
     document.getElementById('lives').textContent = this.lives;
-    
+
     if (this.lives === 0) {
-      this.showGameOverStats();
+      this.showMathResults(); // Show math results when lives reach 0
     }
   }
 

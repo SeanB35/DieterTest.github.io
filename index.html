@@ -49,23 +49,39 @@
           <div class="progress-bubble"></div>
           <div class="progress-bubble"></div>
         </div>
-        <div class="reaction-box waiting">Click to start</div>
-        <div class="stats">
+        <!-- Add the start button here -->
+        <button id="start-reaction-test" class="start-button">Start Reaction Test</button>
+        <div class="reaction-box waiting" style="pointer-events: none;">Click to start</div>        <div class="stats">
           <p>Reaction Time: <span id="reaction-time">0</span> ms</p>
           <p>Average Time: <span id="average">0</span> ms</p>
+        </div>
+      </div>
+      <div id="reactionResultModal" class="click-modal">
+        <div class="click-modal-content">
+          <h2>⏱️ Reaction Test Results</h2>
+          <p id="reactionResultText"></p>
+          <button onclick="game.closeReactionModal()">Close</button>
         </div>
       </div>
 
       <!-- Click Speed Test -->
 
-<div id="click-mode" class="game-mode">
-  <div class="time-bar-container">
-    <div class="time-bar-progress"></div>
-  </div>
-  <button id="start-click-test" class="start-button">Start Click Test</button>
-  <div class="click-box">Click to start</div>
-  <div id="clicks">0</div>
-</div>
+      <div id="click-mode" class="game-mode">
+        <div class="time-bar-container">
+          <div class="time-bar-progress"></div>
+        </div>
+        <button id="start-click-test" class="start-button">Start Click Test</button>
+        <div class="click-box">Click to start</div>
+        <div id="clicks">0</div>
+      
+        <!-- Add the current results box here -->
+        <div class="current-results-box">
+          <h3>Current Results</h3>
+          <p>Clicks: <span id="current-clicks">0</span></p>
+          <p>Clicks per Second: <span id="current-cps">0</span></p>
+          <p>Points: <span id="current-points">0</span></p>
+        </div>
+      </div>
 
       <!-- Memory Game -->
       <div id="memory-mode" class="game-mode">
@@ -86,7 +102,20 @@
           <button class="op-btn" data-op="×">× Multiplication</button>
           <button class="op-btn" data-op="÷">÷ Division</button>
         </div>
-        <div class="stats">Streak: <span id="streak">0</span></div>
+      <div class="current-progress-box">
+        <h3>Current Progress</h3>
+        <p>Correct: <span id="math-correct">0</span></p>
+        <p>Wrong: <span id="math-wrong">0</span></p>
+        <p>Accuracy: <span id="math-accuracy">0%</span></p>
+        <p>Streak: <span id="math-streak">0</span></p>
+        <p>Points: <span id="math-points">0</span></p>
+      </div>
+    </div>
+    <div id="mathResultModal" class="click-modal">
+      <div class="click-modal-content">
+        <h2>🧮 Math Test Results</h2>
+        <p id="mathResultText"></p>
+        <button onclick="game.closeMathModal()">Close</button>
       </div>
     </div>
 
