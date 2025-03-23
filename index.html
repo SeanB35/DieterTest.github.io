@@ -57,19 +57,20 @@
       </div>
 
       <!-- Click Speed Test -->
-      <div id="click-mode" class="mode-content">
-        <div class="time-bar">
-          <div class="time-left"></div>
-        </div>
-        <button id="start-click-test" class="start-button">Start Click Test</button>
-        <div class="click-box">Click to start</div>
-        <div id="clicks">0</div>
-      </div>
+
+<div id="click-mode" class="game-mode">
+  <div class="time-bar-container">
+    <div class="time-bar-progress"></div>
+  </div>
+  <button id="start-click-test" class="start-button">Start Click Test</button>
+  <div class="click-box">Click to start</div>
+  <div id="clicks">0</div>
+</div>
 
       <!-- Memory Game -->
       <div id="memory-mode" class="game-mode">
         <div class="memory-grid"></div>
-        <div class="stats">Score: <span id="memory-score">0</span></div>
+        
       </div>
 
       <!-- Math Test -->
@@ -99,7 +100,20 @@
 </div>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="script.js"></script>
+  <div id="clickResultModal" class="click-modal">
+    <div class="click-modal-content">
+      <h2>⏱️ Test Results</h2>
+      <p id="clickResultText"></p>
+      <button onclick="game.closeClickModal()">Close</button>
+    </div>
+  </div>
+  <div id="memory-stats-modal" class="click-modal">
+    <div class="click-modal-content" style="max-width: 400px;">
+      <!-- Content populated by JavaScript -->
+    </div>
+  </div>
 </body>
+
 </html>
 
 <div class="score-board">

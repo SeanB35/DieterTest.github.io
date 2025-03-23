@@ -18,6 +18,13 @@ class DieterBench {
       memory: [3, 4, 5, 6, 7],
       math: [10, 20, 30, 40, 50],
     };
+    this.memoryStats = {
+      totalGames: 0,
+      correctPatterns: 0,
+      longestPattern: 0,
+      currentStreak: 0,
+      losses: 0
+    };
     this.init();
   }
 
@@ -53,6 +60,13 @@ class DieterBench {
       document.getElementById(`${mode}-mode`).classList.remove('active');
       document.querySelector(`[data-mode="${mode}"]`).classList.remove('active');
     });
+    
+    // Add this line to properly clean up click test
+    if (this.currentMode === 'click') {
+      document.removeEventListener('click', this.handleClickTestBound);
+      clearTimeout(this.clickTimer);
+    }
+
     document.getElementById(`${newMode}-mode`).classList.add('active');
     document.querySelector(`[data-mode="${newMode}"]`).classList.add('active');
     this.currentMode = newMode;
@@ -177,141 +191,278 @@ class DieterBench {
   newClickTest() {
     this.clickCount = 0;
     this.clickTestRunning = false;
-    this.clickStartTime = null;
     const clickBox = document.querySelector('.click-box');
     clickBox.textContent = 'Click Start';
-    document.getElementById('clicks').textContent = this.clickCount;
-  
-    // Remove previous event listeners
+    document.getElementById('clicks').textContent = '0';
+    
+    // Reset time bar
+    document.querySelector('.time-bar-progress').style.transform = 'scaleX(0)';
+    
+    // Clear any existing listeners
     document.removeEventListener('click', this.handleClickTestBound);
     document.getElementById('start-click-test').removeEventListener('click', this.startClickTestBound);
-  
-    // Add new event listeners
+    
+    // Add new listeners
     this.handleClickTestBound = this.handleClickTest.bind(this);
     this.startClickTestBound = this.startClickTest.bind(this);
     document.getElementById('start-click-test').addEventListener('click', this.startClickTestBound);
   }
-  
+
   startClickTest() {
     if (this.clickTestRunning) return;
-  
+    
+
+    
     this.clickTestRunning = true;
     this.clickCount = 0;
-    this.clickStartTime = Date.now();
-    document.querySelector('.click-box').textContent = 'GO! Click as fast as you can!';
-    document.getElementById('clicks').textContent = this.clickCount;
-  
-    // Add click event listener to the entire document
+    const clickBox = document.querySelector('.click-box');
+    clickBox.textContent = 'GO! Click anywhere!';
+    document.getElementById('clicks').textContent = '0';
+    
+    // Start progress animation
+    const progressBar = document.querySelector('.time-bar-progress');
+    progressBar.style.transform = 'scaleX(1)';
+    progressBar.style.transition = 'transform 5s linear';
+    
+    // Add click listener
     document.addEventListener('click', this.handleClickTestBound);
-  
-    // Start the timer
-    const duration = 5000; // 5 seconds
-    const startTime = Date.now();
-    const updateTimeBar = () => {
-      const elapsed = Date.now() - startTime;
-      const timeLeft = 1 - elapsed / duration;
-      document.querySelector('.time-left').style.transform = `scaleX(${timeLeft})`;
-  
-      if (elapsed < duration) {
-        requestAnimationFrame(updateTimeBar);
-      } else {
-        this.endClickTest();
-      }
-    };
-  
-    updateTimeBar();
+    
+    // End after 5 seconds
+    this.clickTimer = setTimeout(() => {
+      this.endClickTest();
+    }, 5000);
   }
-  
+
   handleClickTest() {
     if (this.clickTestRunning) {
       this.clickCount++;
       document.getElementById('clicks').textContent = this.clickCount;
     }
   }
-  
+
   endClickTest() {
+    if (!this.clickTestRunning) return;
+    
     this.clickTestRunning = false;
     document.removeEventListener('click', this.handleClickTestBound);
-  
+    
     const cps = (this.clickCount / 5).toFixed(1);
-    document.querySelector('.click-box').textContent = `${this.clickCount} clicks (${cps}/s)`;
+    this.showClickResults(this.clickCount, cps);
     this.showPercentile('click', cps);
   }
 
+  showClickResults(count, cps) {
+    const modal = document.getElementById('clickResultModal');
+    document.getElementById('clickResultText').textContent = 
+      `🏆 ${count} Clicks\n🚀 ${cps} CPS`;
+    modal.style.display = 'flex';
+  }
+
+  closeClickModal() {
+    document.getElementById('clickResultModal').style.display = 'none';
+    // Reset click test properly
+    this.newClickTest();
+  }
+
   // ================= MEMORY MODE =================
-  setupMemoryGrid() {
-    const grid = document.querySelector('.memory-grid');
-    grid.innerHTML = '';
-    for (let i = 0; i < 16; i++) {
+setupMemoryGrid() {
+  const grid = document.querySelector('.memory-grid');
+  grid.innerHTML = '';
+  for (let i = 0; i < 16; i++) {
       const tile = document.createElement('div');
       tile.className = 'memory-tile';
-      tile.addEventListener('click', () => this.handleMemoryClick(i));
+      tile.dataset.value = i;
       grid.appendChild(tile);
-    }
   }
+}
 
-  newMemoryGame() {
-    const grid = document.querySelector('.memory-grid');
-    grid.innerHTML = '';
-    this.setupMemoryGrid();
-    this.memoryPattern = [];
-    this.memoryProgress = 0;
-    this.generateMemoryPattern();
-    this.showMemoryPattern();
-  }
+newMemoryGame() {
+  this.memoryPattern = this.generateMemoryPattern();
+  this.userInput = [];
+  this.memoryProgress = 0;
+  this.isShowingPattern = true;
+  this.memoryStats.totalGames++;
+  
+  document.querySelectorAll('.memory-tile').forEach(tile => {
+      tile.classList.remove('active', 'correct', 'incorrect');
+  });
+  
+  this.showMemoryPattern()
+      .then(() => {
+          this.isShowingPattern = false;
+          this.addMemoryInputListeners();
+      });
+}
+async handleMemoryClick(e) {
+  if (this.isShowingPattern) return;
 
-  generateMemoryPattern() {
-    const patternLength = Math.floor(this.score / 10) + 2;
-    this.memoryPattern = [];
-    while (this.memoryPattern.length < patternLength) {
-      const newTile = Math.floor(Math.random() * 16);
-      if (this.memoryPattern[this.memoryPattern.length - 1] !== newTile) {
-        this.memoryPattern.push(newTile);
-      }
-    }
-  }
+  const clickedTile = e.target.closest('.memory-tile');
+  const tileIndex = parseInt(clickedTile.dataset.value);
+  const expectedTile = this.memoryPattern[this.userInput.length];
 
-  showMemoryPattern() {
-    const tiles = document.querySelectorAll('.memory-tile');
-    tiles.forEach((tile) => tile.classList.remove('active'));
-    this.memoryAcceptInput = false;
+  clickedTile.classList.add(tileIndex === expectedTile ? 'correct' : 'incorrect');
 
-    let i = 0;
-    const showNextTile = () => {
-      if (i >= this.memoryPattern.length) {
-        this.memoryAcceptInput = true;
-        return;
-      }
+  if (tileIndex === expectedTile) {
+    this.userInput.push(tileIndex);
 
-      const index = this.memoryPattern[i];
-      tiles[index].classList.add('active');
-      setTimeout(() => {
-        tiles[index].classList.remove('active');
-        i++;
-        setTimeout(showNextTile, 500);
-      }, 1000);
-    };
-
-    showNextTile();
-  }
-
-  handleMemoryClick(index) {
-    if (!this.memoryAcceptInput) return;
-
-    const tiles = document.querySelectorAll('.memory-tile');
-    if (this.memoryPattern[this.memoryProgress] === index) {
-      tiles[index].classList.add('active');
-      setTimeout(() => tiles[index].classList.remove('active'), 200);
-      this.memoryProgress++;
-      if (this.memoryProgress === this.memoryPattern.length) {
-        this.updateScore(20);
-        this.newMemoryGame();
-      }
-    } else {
-      this.loseLife();
+    if (this.userInput.length === this.memoryPattern.length) {
+      await this.showSuccessFeedback();
+      this.updateScore(25 + (this.memoryPattern.length * 5));
+      this.memoryStats.correctPatterns++;
+      this.memoryStats.currentStreak++;
+      this.memoryStats.longestPattern = Math.max(
+        this.memoryStats.longestPattern, 
+        this.memoryPattern.length
+      );
       this.newMemoryGame();
     }
+  } else {
+    await this.showErrorFeedback();
+    this.loseLife();
+    if (this.lives > 0) this.newMemoryGame();
   }
+
+  setTimeout(() => {
+    clickedTile.classList.remove('correct', 'incorrect');
+  }, 500);
+
+}
+
+showMemoryStats() {
+  const modal = document.getElementById('memory-stats-modal');
+  const statsHTML = `
+      <h2>🧠 Memory Stats</h2>
+      <div class="memory-stats-grid">
+          <div>Total Games:</div><div>${this.memoryStats.totalGames}</div>
+          <div>Correct Patterns:</div><div>${this.memoryStats.correctPatterns}</div>
+          <div>Longest Pattern:</div><div>${this.memoryStats.longestPattern}</div>
+          <div>Current Streak:</div><div>${this.memoryStats.currentStreak}</div>
+      </div>
+      <button onclick="game.resetMemoryGame()">Try Again</button>
+  `;
+  
+  modal.querySelector('.modal-content').innerHTML = statsHTML;
+  modal.style.display = 'flex';
+}
+
+resetMemoryGame() {
+  this.memoryStats = {
+      totalGames: 0,
+      correctPatterns: 0,
+      longestPattern: 0,
+      currentStreak: 0,
+      losses: 0
+  };
+  this.lives = 3;
+  this.score = 0;
+  document.getElementById('lives').textContent = 3;
+  document.getElementById('score').textContent = 0;
+  document.getElementById('memory-stats-modal').style.display = 'none';
+  this.newMemoryGame();
+}
+
+generateMemoryPattern() {
+  const baseLength = 3; // Starting pattern length
+  const difficultyLevel = Math.floor(this.score / 50); // Increase length every 50 points
+  const patternLength = baseLength + difficultyLevel;
+  
+  const pattern = [];
+  let previousTile = -1;
+  
+  for (let i = 0; i < patternLength; i++) {
+      let newTile;
+      do {
+          newTile = Math.floor(Math.random() * 16);
+      } while (newTile === previousTile); // Prevent consecutive duplicates
+      
+      pattern.push(newTile);
+      previousTile = newTile;
+  }
+  
+  return pattern;
+}
+
+async showMemoryPattern() {
+  const tiles = document.querySelectorAll('.memory-tile');
+  this.removeMemoryInputListeners();
+  
+  for (const tileIndex of this.memoryPattern) {
+      await new Promise(resolve => {
+          tiles[tileIndex].classList.add('active');
+          setTimeout(() => {
+              tiles[tileIndex].classList.remove('active');
+              resolve();
+          }, 1000);
+      });
+      await new Promise(resolve => setTimeout(resolve, 300)); // Pause between tiles
+  }
+}
+
+addMemoryInputListeners() {
+  this.memoryClickHandler = (e) => this.handleMemoryClick(e);
+  document.querySelectorAll('.memory-tile').forEach(tile => {
+      tile.addEventListener('click', this.memoryClickHandler);
+  });
+}
+
+removeMemoryInputListeners() {
+  document.querySelectorAll('.memory-tile').forEach(tile => {
+      tile.removeEventListener('click', this.memoryClickHandler);
+  });
+}
+
+async handleMemoryClick(e) {
+  if (this.isShowingPattern) return;
+  
+  const clickedTile = e.target.closest('.memory-tile');
+  if (!clickedTile) return;
+  
+  const tileIndex = parseInt(clickedTile.dataset.value);
+  const expectedTile = this.memoryPattern[this.userInput.length];
+  
+  // Visual feedback
+  clickedTile.classList.add(tileIndex === expectedTile ? 'correct' : 'incorrect');
+  
+  if (tileIndex === expectedTile) {
+      this.userInput.push(tileIndex);
+      
+      if (this.userInput.length === this.memoryPattern.length) {
+          // Complete pattern
+          await this.showSuccessFeedback();
+          this.updateScore(25);
+          this.newMemoryGame();
+      }
+  } else {
+      // Incorrect pattern
+      await this.showErrorFeedback();
+      this.loseLife();
+      this.newMemoryGame();
+  }
+  
+  setTimeout(() => {
+      clickedTile.classList.remove('correct', 'incorrect');
+  }, 500);
+}
+
+async showSuccessFeedback() {
+  const tiles = document.querySelectorAll('.memory-tile');
+  for (const tile of tiles) {
+      tile.classList.add('correct');
+      await new Promise(resolve => setTimeout(resolve, 50));
+      tile.classList.remove('correct');
+  }
+}
+
+async showErrorFeedback() {
+  const tiles = document.querySelectorAll('.memory-tile');
+  for (const tile of tiles) {
+      tile.classList.add('incorrect');
+  }
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  for (const tile of tiles) {
+      tile.classList.remove('incorrect');
+  }
+}
 
   // ================= MATH MODE =================
   setupMathMode() {
@@ -374,22 +525,52 @@ class DieterBench {
   loseLife() {
     this.lives = Math.max(0, this.lives - 1);
     document.getElementById('lives').textContent = this.lives;
+    
     if (this.lives === 0) {
-      setTimeout(() => {
-        alert(`Game Over! Score: ${this.score}`);
-        this.resetGame();
-      }, 100);
+      this.showGameOverStats();
     }
+  }
+
+  showGameOverStats() {
+    const modal = document.getElementById('memory-stats-modal');
+    const statsHTML = `
+      <h2>💀 Game Over!</h2>
+      <div class="memory-stats-grid">
+        <div>Final Score:</div><div>${this.score}</div>
+        <div>Longest Pattern:</div><div>${this.memoryStats.longestPattern}</div>
+        <div>Correct Patterns:</div><div>${this.memoryStats.correctPatterns}</div>
+        <div>Total Games:</div><div>${this.memoryStats.totalGames}</div>
+      </div>
+      <button onclick="game.resetGame()">Try Again</button>
+    `;
+    
+    modal.querySelector('.modal-content').innerHTML = statsHTML;
+    modal.style.display = 'flex';
   }
 
   resetGame() {
     this.score = 0;
     this.lives = 3;
     this.streak = 0;
+    this.memoryStats = {
+      totalGames: 0,
+      correctPatterns: 0,
+      longestPattern: 0,
+      currentStreak: 0,
+      losses: 0
+    };
+
     document.getElementById('score').textContent = 0;
     document.getElementById('lives').textContent = 3;
     document.getElementById('streak').textContent = 0;
-    this.updateRank();
+    document.getElementById('memory-stats-modal').style.display = 'none';
+    
+    // Reset current mode
+    if (this.currentMode === 'memory') {
+      this.newMemoryGame();
+    } else {
+      this.switchMode(this.currentMode);
+    }
   }
 
   updateRank() {
