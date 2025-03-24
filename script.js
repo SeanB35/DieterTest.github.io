@@ -3,7 +3,12 @@ class DieterBench {
     this.modes = ['reaction', 'click', 'memory', 'math'];
     this.currentMode = 'reaction';
     this.score = 0;
-    this.lives = 3;
+    this.lives = {
+      reaction: 3,
+      click: 3,
+      memory: 3,
+      math: 3
+    };
     this.streak = 0;
     this.mathOperation = 'mixed';
     this.clickTestRunning = false;
@@ -41,9 +46,11 @@ class DieterBench {
     this.setupMemoryGrid();
     this.switchMode('reaction');
     this.updateRank();
+    this.setupModalListeners(); // Add this
   }
 
   setupEventListeners() {
+    
     document.querySelectorAll('.mode-btn').forEach((btn) => {
       btn.addEventListener('click', (e) => {
         const mode = e.target.closest('button').dataset.mode;
@@ -74,9 +81,14 @@ class DieterBench {
     });
 
     document.querySelector('.reaction-box').addEventListener('click', () => this.handleReactionClick());
+    document.getElementById('closeReactionModalBtn')?.addEventListener('click', () => this.closeReactionModal());
+    document.getElementById('closeClickModalBtn')?.addEventListener('click', () => this.closeClickModal());
+    document.getElementById('closeMathModalBtn')?.addEventListener('click', () => this.closeMathModal());
+    document.getElementById('closeMemoryModalBtn')?.addEventListener('click', () => this.closeMemoryStatsModal());
   }
 
   switchMode(newMode) {
+    document.getElementById('lives').textContent = this.lives[newMode];
     this.modes.forEach((mode) => {
       document.getElementById(`${mode}-mode`).classList.remove('active');
       document.querySelector(`[data-mode="${mode}"]`).classList.remove('active');
@@ -340,7 +352,13 @@ class DieterBench {
 
   closeClickModal() {
     document.getElementById('clickResultModal').style.display = 'none';
-    // Reset click test properly
+    // Reset time bar properly
+    const progressBar = document.querySelector('.time-bar-progress');
+    progressBar.style.transition = 'none';
+    progressBar.style.transform = 'scaleX(0)';
+    setTimeout(() => {
+      progressBar.style.transition = 'transform 5s linear';
+    }, 10);
     this.newClickTest();
   }
 
@@ -377,6 +395,8 @@ async handleMemoryClick(e) {
   if (this.isShowingPattern) return;
 
   const clickedTile = e.target.closest('.memory-tile');
+  if (!clickedTile) return;
+  
   const tileIndex = parseInt(clickedTile.dataset.value);
   const expectedTile = this.memoryPattern[this.userInput.length];
 
@@ -399,31 +419,37 @@ async handleMemoryClick(e) {
   } else {
     await this.showErrorFeedback();
     this.loseLife();
-    if (this.lives > 0) this.newMemoryGame();
+    if (this.lives > 0) {
+      this.newMemoryGame();
+    } else {
+      this.showGameOverStats(); // Show memory-specific game over
+    }
   }
 
   setTimeout(() => {
     clickedTile.classList.remove('correct', 'incorrect');
   }, 500);
-
+}
+closeMemoryStatsModal() {
+  document.getElementById('memory-stats-modal').style.display = 'none';
 }
 
 showMemoryStats() {
   const modal = document.getElementById('memory-stats-modal');
-  const statsHTML = `
-      <h2>🧠 Memory Stats</h2>
-      <div class="memory-stats-grid">
-          <div>Total Games:</div><div>${this.memoryStats.totalGames}</div>
-          <div>Correct Patterns:</div><div>${this.memoryStats.correctPatterns}</div>
-          <div>Longest Pattern:</div><div>${this.memoryStats.longestPattern}</div>
-          <div>Current Streak:</div><div>${this.memoryStats.currentStreak}</div>
-      </div>
-      <button onclick="game.resetMemoryGame()">Try Again</button>
+  const content = document.getElementById('memoryStatsContent');
+  
+  content.innerHTML = `
+    <div class="memory-stats-grid">
+      <div>Total Games:</div><div>${this.memoryStats.totalGames}</div>
+      <div>Correct Patterns:</div><div>${this.memoryStats.correctPatterns}</div>
+      <div>Longest Pattern:</div><div>${this.memoryStats.longestPattern}</div>
+      <div>Current Streak:</div><div>${this.memoryStats.currentStreak}</div>
+    </div>
   `;
   
-  modal.querySelector('.modal-content').innerHTML = statsHTML;
   modal.style.display = 'flex';
 }
+
 
 resetMemoryGame() {
   this.memoryStats = {
@@ -577,6 +603,8 @@ async showErrorFeedback() {
     this.currentAnswer = eval(`${a} ${op === '×' ? '*' : op === '÷' ? '/' : op} ${b}`);
     document.querySelector('.math-problem').textContent = `${a} ${op} ${b} = ?`;
     document.querySelector('.math-input').focus(); // Ensure the input field is focused
+    document.querySelector('.math-input').value = ''; // Clear input on new problem
+    document.querySelector('.math-input').focus();
   }
 
   checkMathAnswer() {
@@ -585,26 +613,19 @@ async showErrorFeedback() {
     if (isNaN(userAnswer)) return;
 
     if (userAnswer === this.currentAnswer) {
-      this.mathCorrect++; // Increment correct answers
-      this.updateScore(10); // Award points
-      this.mathPoints += 10; // Track points earned in this game
-      this.streak++; // Increment streak
+      // ... existing success code
     } else {
-      this.mathWrong++; // Increment wrong answers
-      this.loseLife();
-      this.streak = 0; // Reset streak
+      this.mathWrong++;
+      this.loseLife();  // Now mode-specific
+      this.streak = 0;
     }
 
-    // Update the current progress box
-    this.updateMathProgress();
-
-    // Update the streak display
-    document.getElementById('streak').textContent = this.streak;
-
-    // Clear the input field and generate a new problem
     inputField.value = '';
-    this.newMathProblem();
+    this.newMathProblem(); // Force new problem
+    inputField.focus(); // Ensure focus stays
+    this.updateMathProgress();
   }
+
 
   updateMathProgress() {
     // Calculate accuracy
@@ -653,11 +674,25 @@ async showErrorFeedback() {
   }
 
   loseLife() {
-    this.lives = Math.max(0, this.lives - 1);
-    document.getElementById('lives').textContent = this.lives;
+    const currentMode = this.currentMode;
+    this.lives[currentMode] = Math.max(0, this.lives[currentMode] - 1);
+    document.getElementById('lives').textContent = this.lives[currentMode];
 
-    if (this.lives === 0) {
-      this.showMathResults(); // Show math results when lives reach 0
+    if (this.lives[currentMode] === 0) {
+      switch (currentMode) {
+        case 'math':
+          this.showMathResults();
+          break;
+        case 'memory':
+          this.showGameOverStats();
+          break;
+        case 'click':
+          // Add click game over handling if needed
+          break;
+        case 'reaction':
+          // Add reaction game over handling if needed
+          break;
+      }
     }
   }
 
