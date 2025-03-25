@@ -15,6 +15,8 @@
       <button class="mode-btn" data-mode="click">👆 Click Speed</button>
       <button class="mode-btn" data-mode="memory">🧠 Memory</button>
       <button class="mode-btn" data-mode="math">➗ Math</button>
+      <button class="mode-btn" data-mode="chimp">🐒 Chimp Test</button>
+      <button class="mode-btn" data-mode="visual">👀 Visual Memory</button>
     </div>
 
     <div class="game-container">
@@ -89,7 +91,36 @@
         <div class="lives">Lives: <span id="lives">3</span></div>
         <div><span id="rank">No Rank Yet</span></div>
       </div>
+      <div id="chimp-mode" class="game-mode">
+        <div class="chimp-container"></div>
+        <button id="start-chimp-test" class="start-button">Start Chimp Test</button>
+        <div class="current-progress-box">
+          <h3>Current Progress</h3>
+          <p>Level: <span id="chimp-level">1</span></p>
+          <p>Score: <span id="chimp-points">0</span></p>
+        </div>
+      </div>
+      
+      <!-- Visual Memory -->
+      <div id="visual-mode" class="game-mode">
+        <div class="visual-grid"></div>
+        <div class="current-progress-box">
+          <h3>Current Progress</h3>
+          <p>Correct: <span id="visual-correct">0</span></p>
+          <p>Streak: <span id="visual-streak">0</span></p>
+          <p>Score: <span id="visual-points">0</span></p>
+        </div>
+        <div class="progress-indicator">
+          <div class="progress-bubble"></div>
+          <div class="progress-bubble"></div>
+          <div class="progress-bubble"></div>
+          <div class="progress-bubble"></div>
+          <div class="progress-bubble"></div>
+        </div>
+      </div>
     </div>
+    <!-- Chimp Test -->
+
 
     <!-- Modals -->
     <div id="reactionResultModal" class="click-modal">
@@ -121,6 +152,21 @@
         <h2>🧠 Memory Stats</h2>
         <div id="memoryStatsContent"></div>
         <button id="closeMemoryModalBtn">Close</button>
+      </div>
+    </div>
+    <div id="chimpResultModal" class="click-modal">
+      <div class="click-modal-content">
+        <h2>🐒 Chimp Test Results</h2>
+        <p id="chimpResultText"></p>
+        <button id="closeChimpModalBtn">Close</button>
+      </div>
+    </div>
+    
+    <div id="visualResultModal" class="click-modal">
+      <div class="click-modal-content">
+        <h2>👀 Visual Memory Results</h2>
+        <p id="visualResultText"></p>
+        <button id="closeVisualModalBtn">Close</button>
       </div>
     </div>
 

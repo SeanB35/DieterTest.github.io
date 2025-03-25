@@ -1,15 +1,19 @@
 class DieterBench {
   constructor() {
-    this.modes = ['reaction', 'click', 'memory', 'math'];
+    this.modes = ['reaction', 'click', 'memory', 'math', 'chimp', 'visual'];
     this.currentMode = 'reaction';
     this.score = 0;
     this.lives = {
       reaction: 3,
       click: 3,
       memory: 3,
-      math: 3
+      math: 3,
+      chimp: 3,  // Add chimp
+      visual: 3   // Add visual
     };
     this.streak = 0;
+    this.chimpInput = [];
+    this.visualInput = [];
     this.mathOperation = 'mixed';
     this.clickTestRunning = false;
     this.reactionTimes = [];
@@ -37,6 +41,10 @@ class DieterBench {
     this.mathCorrect = 0; // Track correct answers
     this.mathWrong = 0; // Track wrong answers
     this.mathPoints = 0; // Track points earned in the current game
+    this.chimpLevel = 1;
+    this.chimpSequence = [];
+    this.visualPattern = [];
+    this.visualInput = [];
     this.init();
   }
 
@@ -85,25 +93,37 @@ class DieterBench {
     document.getElementById('closeClickModalBtn')?.addEventListener('click', () => this.closeClickModal());
     document.getElementById('closeMathModalBtn')?.addEventListener('click', () => this.closeMathModal());
     document.getElementById('closeMemoryModalBtn')?.addEventListener('click', () => this.closeMemoryStatsModal());
+    document.getElementById('start-chimp-test').addEventListener('click', () => this.startChimpTest());
+  document.getElementById('closeChimpModalBtn')?.addEventListener('click', () => this.closeChimpModal());
+  document.getElementById('closeVisualModalBtn')?.addEventListener('click', () => this.closeVisualModal());
   }
 
   switchMode(newMode) {
-    document.getElementById('lives').textContent = this.lives[newMode];
-    this.modes.forEach((mode) => {
-      document.getElementById(`${mode}-mode`).classList.remove('active');
-      document.querySelector(`[data-mode="${mode}"]`).classList.remove('active');
-    });
-    
-    // Add this line to properly clean up click test
+    // Add these lines for cleanup
     if (this.currentMode === 'click') {
       document.removeEventListener('click', this.handleClickTestBound);
       clearTimeout(this.clickTimer);
     }
-
+    if (this.currentMode === 'chimp') {
+      document.querySelector('.chimp-container').innerHTML = '';
+    }
+    
+    // Add cleanup for visual mode
+    if (this.currentMode === 'visual') {
+      this.removeVisualListeners();
+    }
+  
+    // Update mode display
+    this.modes.forEach((mode) => {
+      document.getElementById(`${mode}-mode`).classList.remove('active');
+      document.querySelector(`[data-mode="${mode}"]`).classList.remove('active');
+    });
+  
     document.getElementById(`${newMode}-mode`).classList.add('active');
     document.querySelector(`[data-mode="${newMode}"]`).classList.add('active');
     this.currentMode = newMode;
-
+  
+    // Handle mode-specific initialization
     if (newMode === 'reaction') {
       this.initReactionTest();
     } else if (newMode === 'click') {
@@ -112,7 +132,14 @@ class DieterBench {
       this.newMemoryGame();
     } else if (newMode === 'math') {
       this.newMathProblem();
+    } else if (newMode === 'chimp') {  // Add chimp initialization
+      this.chimpLevel = 1;
+      this.startChimpTest();
+    } else if (newMode === 'visual') {  // Add visual initialization
+      this.newVisualGame();
     }
+    
+    document.getElementById('lives').textContent = this.lives[newMode];
   }
 
   // ================= REACTION MODE =================
@@ -129,7 +156,11 @@ class DieterBench {
     document.querySelector('.reaction-box').classList.remove('ready');
     document.querySelector('.reaction-box').style.pointerEvents = 'none'; // Disable clicks initially
   }
-
+  removeVisualListeners() {
+    document.querySelectorAll('.visual-tile').forEach(tile => {
+      tile.removeEventListener('click', this.visualClickHandler);
+    });
+  }
   startReactionTest() {
     if (this.tryCount >= this.maxTries) {
       this.endReactionTest();
@@ -238,6 +269,8 @@ class DieterBench {
     document.getElementById('closeReactionModalBtn').addEventListener('click', () => {
       this.closeReactionModal();
     });
+    document.getElementById('closeChimpModalBtn')?.addEventListener('click', () => this.closeChimpModal());
+  document.getElementById('closeVisualModalBtn')?.addEventListener('click', () => this.closeVisualModal());
   }
 
   calculatePoints(reactionTime) {
@@ -492,16 +525,19 @@ async showMemoryPattern() {
   const tiles = document.querySelectorAll('.memory-tile');
   this.removeMemoryInputListeners();
   
-  for (const tileIndex of this.memoryPattern) {
-      await new Promise(resolve => {
-          tiles[tileIndex].classList.add('active');
-          setTimeout(() => {
-              tiles[tileIndex].classList.remove('active');
-              resolve();
-          }, 1000);
-      });
-      await new Promise(resolve => setTimeout(resolve, 300)); // Pause between tiles
-  }
+  // Show all pattern tiles at once
+  this.memoryPattern.forEach(index => {
+    tiles[index].classList.add('active');
+  });
+  
+  await new Promise(resolve => setTimeout(resolve, 2000));
+  
+  // Hide all tiles
+  this.memoryPattern.forEach(index => {
+    tiles[index].classList.remove('active');
+  });
+  
+  this.addMemoryInputListeners();
 }
 
 addMemoryInputListeners() {
@@ -517,36 +553,31 @@ removeMemoryInputListeners() {
   });
 }
 
-async handleMemoryClick(e) {
+handleMemoryClick(e) {
   if (this.isShowingPattern) return;
   
   const clickedTile = e.target.closest('.memory-tile');
-  if (!clickedTile) return;
-  
   const tileIndex = parseInt(clickedTile.dataset.value);
-  const expectedTile = this.memoryPattern[this.userInput.length];
   
-  // Visual feedback
-  clickedTile.classList.add(tileIndex === expectedTile ? 'correct' : 'incorrect');
-  
-  if (tileIndex === expectedTile) {
+  if (this.memoryPattern.includes(tileIndex)) {
+    if (!this.userInput.includes(tileIndex)) {
       this.userInput.push(tileIndex);
-      
-      if (this.userInput.length === this.memoryPattern.length) {
-          // Complete pattern
-          await this.showSuccessFeedback();
-          this.updateScore(25);
-          this.newMemoryGame();
-      }
-  } else {
-      // Incorrect pattern
-      await this.showErrorFeedback();
-      this.loseLife();
+      clickedTile.classList.add('correct');
+    }
+    
+    if (this.userInput.length === this.memoryPattern.length) {
+      // Success
+      this.updateScore(25);
       this.newMemoryGame();
+    }
+  } else {
+    // Handle wrong answer
+    clickedTile.classList.add('incorrect');
+    this.loseLife();
   }
   
   setTimeout(() => {
-      clickedTile.classList.remove('correct', 'incorrect');
+    clickedTile.classList.remove('correct', 'incorrect');
   }, 500);
 }
 
@@ -666,7 +697,225 @@ async showErrorFeedback() {
     const modal = document.getElementById('mathResultModal');
     modal.style.display = 'none';
   }
+  // ================= CHIMP TEST =================
+  startChimpTest() {
+    this.chimpSequence = this.generateChimpSequence();
+    this.createChimpGrid();
+    this.showChimpNumbers();
+  }
+  createChimpGrid() {
+    const grid = document.querySelector('.chimp-grid');
+    grid.innerHTML = '';
+    
+    // Create 5x5 grid (25 tiles)
+    for (let i = 0; i < 25; i++) {
+      const tile = document.createElement('div');
+      tile.className = 'chimp-tile';
+      grid.appendChild(tile);
+    }
+  }
+  generateChimpSequence() {
+    const sequence = [];
+    const count = this.chimpLevel + 2;
+    const positions = new Set();
+  
+    while (positions.size < count) {
+      positions.add(
+        `${Math.floor(Math.random() * 550)}px, ${Math.floor(Math.random() * 350)}px`
+      );
+    }
+  
+    Array.from(positions).forEach((pos, index) => {
+      sequence.push({
+        number: index + 1,
+        position: pos
+      });
+    });
+  
+    return sequence;
+  }
+  
+  async showChimpNumbers() {
+    const tiles = document.querySelectorAll('.chimp-tile');
+    
+    // Show numbers in random tiles
+    this.chimpSequence.forEach(({ index, number }) => {
+      tiles[index].textContent = number;
+      tiles[index].classList.add('active');
+    });
+  
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // Hide numbers but keep tiles visible
+    tiles.forEach(tile => {
+      tile.textContent = '';
+      tile.classList.remove('active');
+    });
+    
+    this.addChimpListeners();
+  }
+  
+  addChimpListeners() {
+    this.chimpClickHandler = (e) => this.handleChimpClick(e);
+    document.querySelector('.chimp-container').addEventListener('click', this.chimpClickHandler);
+  }
+  
+  handleChimpClick(e) {
+    const clickedNumber = parseInt(e.target.textContent);
+    const expectedNumber = this.chimpSequence[this.visualInput.length].number;
+  
+    if (clickedNumber === expectedNumber) {
+      this.chimpInput.push(clickedNumber);
+      if (this.visualInput.length === this.chimpSequence.length) {
+        this.chimpLevel++;
+        this.updateScore(50 * this.chimpLevel);
+        this.startChimpTest();
+      }
+    } else {
+      this.loseLife();
+      this.showChimpResults();
+    }
+  }
+  
+  showChimpResults() {
+    const modal = document.getElementById('chimpResultModal');
+    document.getElementById('chimpResultText').textContent = 
+      `🏆 Level Reached: ${this.chimpLevel}\n🔥 Points Earned: ${50 * this.chimpLevel}`;
+    modal.style.display = 'flex';
+  }
+  
+  closeChimpModal() {
+    document.getElementById('chimpResultModal').style.display = 'none';
+    this.chimpLevel = 1;
+    this.visualInput = [];
+  }
 
+  // ================= VISUAL MEMORY =================
+  newVisualGame() {
+    const grid = document.querySelector('.visual-grid');
+    grid.innerHTML = '';
+    
+    // Create 5x5 grid
+    for (let i = 0; i < 25; i++) {
+      const tile = document.createElement('div');
+      tile.className = 'visual-tile';
+      grid.appendChild(tile);
+    }
+  
+    this.visualPattern = this.generateVisualPattern();
+    this.visualInput = [];
+    this.showVisualPattern();
+  }
+
+  generateVisualPattern() {
+    const pattern = [];
+    const count = 3 + Math.floor(this.score / 100);
+    // Change tiles.length to 25 since we have 5x5 grid
+    while (pattern.length < count) {
+      const randomIndex = Math.floor(Math.random() * 25);
+      if (!pattern.includes(randomIndex)) pattern.push(randomIndex);
+    }
+    return pattern;
+  }
+
+  async showVisualPattern() {
+    const tiles = document.querySelectorAll('.visual-tile');
+    
+    // Show pattern with animation
+    for (const index of this.visualPattern) {
+      await new Promise(resolve => {
+        tiles[index].classList.add('active');
+        setTimeout(() => {
+          tiles[index].classList.remove('active');
+          resolve();
+        }, 1000);
+      });
+      await new Promise(resolve => setTimeout(resolve, 300));
+    }
+    
+    this.addVisualListeners();
+  }
+
+addVisualListeners() {
+  this.visualClickHandler = (e) => this.handleVisualClick(e);
+  document.querySelectorAll('.visual-tile').forEach(tile => {
+    tile.addEventListener('click', this.visualClickHandler);
+  });
+}
+updateVisualProgress(isCorrect = true) {
+  const bubbles = document.querySelectorAll('#visual-mode .progress-bubble');
+  const index = this.visualInput.length;
+  if (index < bubbles.length) {
+    bubbles[index].classList.add(isCorrect ? 'correct' : 'incorrect');
+  }
+}
+handleVisualClick(e) {
+  const clickedTile = e.target.closest('.visual-tile');
+  if (!clickedTile) return; // Safety check
+  
+  const tileIndex = Array.from(document.querySelectorAll('.visual-tile')).indexOf(clickedTile);
+  
+  // Correct tile clicked
+  if (this.visualPattern.includes(tileIndex)) {
+    if (!this.visualInput.includes(tileIndex)) {
+      this.visualInput.push(tileIndex);
+      
+      // Visual feedback for correct selection
+      clickedTile.classList.add('correct');
+      setTimeout(() => {
+        clickedTile.classList.remove('correct');
+        clickedTile.classList.add('active');
+      }, 500);
+      
+      // Check if pattern is complete
+      if (this.visualInput.length === this.visualPattern.length) {
+        // Success animation
+        document.querySelectorAll('.visual-tile').forEach(tile => {
+          tile.classList.add('correct');
+        });
+        setTimeout(() => {
+          this.updateScore(50 + (this.visualPattern.length * 5));
+          this.newVisualGame();
+        }, 1000);
+      }
+    }
+    this.updateVisualProgress();
+  } 
+  // Incorrect tile clicked
+  else {
+    // Visual feedback for error
+    clickedTile.classList.add('incorrect');
+    setTimeout(() => clickedTile.classList.remove('incorrect'), 500);
+    
+    // Shake animation for all tiles
+    document.querySelectorAll('.visual-tile').forEach(tile => {
+      tile.classList.add('shake');
+      setTimeout(() => tile.classList.remove('shake'), 500);
+    });
+    
+    this.loseLife();
+    
+    // Reset if lives remain
+    if (this.lives.visual > 0) {
+      setTimeout(() => this.newVisualGame(), 1000);
+    } else {
+      this.showVisualResults();
+    }
+    this.updateVisualProgress(false);
+  }
+}
+
+showVisualResults() {
+  const modal = document.getElementById('visualResultModal');
+  document.getElementById('visualResultText').textContent = 
+    `🏆 Correct Matches: ${this.visualInput.length}\n🔥 Points Earned: ${this.visualInput.length * 25}`;
+  modal.style.display = 'flex';
+}
+
+closeVisualModal() {
+  document.getElementById('visualResultModal').style.display = 'none';
+  this.newVisualGame();
+}
   // ================= CORE FUNCTIONS =================
   updateScore(points) {
     this.score += points;
