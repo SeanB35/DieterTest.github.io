@@ -613,19 +613,20 @@ async showErrorFeedback() {
     if (isNaN(userAnswer)) return;
 
     if (userAnswer === this.currentAnswer) {
-      // ... existing success code
+        this.mathCorrect++; // Increment correct answers
+        this.mathPoints += 10; // Award points
+        this.streak++; // Increase streak
     } else {
-      this.mathWrong++;
-      this.loseLife();  // Now mode-specific
-      this.streak = 0;
+        this.mathWrong++; // Increment wrong answers
+        this.loseLife(); // Deduct a life
+        this.streak = 0; // Reset streak
     }
 
     inputField.value = '';
-    this.newMathProblem(); // Force new problem
-    inputField.focus(); // Ensure focus stays
-    this.updateMathProgress();
-  }
-
+    this.newMathProblem(); // Load new problem
+    inputField.focus(); // Ensure input stays focused
+    this.updateMathProgress(); // Update UI
+}
 
   updateMathProgress() {
     // Calculate accuracy
