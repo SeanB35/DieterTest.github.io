@@ -59,8 +59,17 @@
       </div>
 
       <!-- Memory Game -->
-      <div id="memory-mode" class="game-mode">
+      <div id="memory-mode" class="game-mode">   
+        <div class="progress-indicator">
+          <!-- Bubbles will be dynamically added via JS -->
+        </div>
         <div class="memory-grid"></div>
+        <div class="current-progress-box">
+          <h3>Current Progress</h3>
+          <p>Correct: <span id="memory-correct">0</span></p>
+          <p>Streak: <span id="memory-streak">0</span></p>
+          <p>Score: <span id="memory-points">0</span></p>
+        </div>  
       </div>
 
       <!-- Math Test -->
@@ -99,23 +108,30 @@
           <p>Level: <span id="chimp-level">1</span></p>
           <p>Score: <span id="chimp-points">0</span></p>
         </div>
+<button id="start-chimp-test" class="start-button">Start Chimp Test</button>
+<div class="current-progress-box">
+  <h3>Current Progress</h3>
+  <p>Level: <span id="chimp-level">1</span></p>
+  <p>Score: <span id="chimp-points">0</span></p>
+  <p>Lives: <span id="chimp-lives">3</span></p>
+</div>
       </div>
       
       <!-- Visual Memory -->
       <div id="visual-mode" class="game-mode">
-        <div class="visual-grid"></div>
-        <div class="current-progress-box">
-          <h3>Current Progress</h3>
-          <p>Correct: <span id="visual-correct">0</span></p>
-          <p>Streak: <span id="visual-streak">0</span></p>
-          <p>Score: <span id="visual-points">0</span></p>
-        </div>
         <div class="progress-indicator">
           <div class="progress-bubble"></div>
           <div class="progress-bubble"></div>
           <div class="progress-bubble"></div>
           <div class="progress-bubble"></div>
           <div class="progress-bubble"></div>
+        </div>
+        <div class="visual-grid"></div>
+        <div class="current-progress-box">
+          <h3>Current Progress</h3>
+          <p>Correct: <span id="visual-correct">0</span></p>
+          <p>Streak: <span id="visual-streak">0</span></p>
+          <p>Score: <span id="visual-points">0</span></p>
         </div>
       </div>
     </div>

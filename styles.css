@@ -134,11 +134,15 @@ body {
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
+  
+}
+.memory-mode.active .memory-tile {
+  pointer-events: auto; /* Enable clicks only when active */
 }
 
 .memory-tile.active {
   background: var(--accent);
-  transform: scale(0.95);
+  transition: background 0.5s ease;
 }
 
 /* Sequence Game Styles */
@@ -246,23 +250,25 @@ max-height: 300px;
 }
 
 .progress-indicator {
-display: flex;
-gap: 0.5rem;
-margin-bottom: 1rem;
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
 .progress-bubble {
-width: 15px;
-height: 15px;
-background: #ff5252; /* Red by default */
-border-radius: 50%;
-transition: background 0.3s ease;
+  width: 15px;
+  height: 15px;
+  background: var(--secondary);
+  border-radius: 50%;
+  transition: all 0.3s ease;
 }
 
 .progress-bubble.completed {
-background: #4caf50; /* Green when completed */
-}
+  background: #4caf50;
 
+}
 /* Time Bar */
 .time-bar {
 width: 100%;
@@ -383,6 +389,11 @@ margin-top: 10px;
 }
 
 
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
 .game-mode:not(.active) #click-mode {
   display: none !important;
 }
@@ -403,6 +414,8 @@ margin-top: 10px;
   background: var(--accent) !important;
   transform: scale(0.95);
   box-shadow: 0 0 15px rgba(100, 255, 218, 0.5);
+  transition: all 0.3s ease;
+  animation: pulse 0.5s ease;
 }
 
 .memory-tile.incorrect {
@@ -412,12 +425,12 @@ margin-top: 10px;
   animation: shake 0.5s;
 }
 
+
 @keyframes shake {
-  0% { transform: translateX(0) scale(0.95); }
-  25% { transform: translateX(-5px) scale(0.95); }
-  50% { transform: translateX(5px) scale(0.95); }
-  75% { transform: translateX(-5px) scale(0.95); }
-  100% { transform: translateX(0) scale(0.95); }
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  50% { transform: translateX(5px); }
+  75% { transform: translateX(-5px); }
 }
 
 /* Memory Stats Modal */
@@ -660,13 +673,12 @@ margin-top: 10px;
 /* styles.css */
 /* Chimp Test */
 .chimp-container {
-  position: relative;
-  width: 600px;
-  height: 400px;
-  border: 2px solid var(--secondary);
-  border-radius: 12px;
-  margin: 1rem auto; /* Changed from transform */
-  z-index: 100;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1rem;
+  padding: 1rem;
+  max-width: 500px;
+  margin: 0 auto;
 }
 
 .chimp-number {
@@ -720,7 +732,8 @@ margin-top: 10px;
   margin: 0 auto;
 }
 .chimp-tile {
-  width: 80px;
+  width: 100%;
+  aspect-ratio: 1;
   height: 80px;
   background: var(--background);
   border: 2px solid var(--secondary);
@@ -738,15 +751,20 @@ margin-top: 10px;
   color: var(--primary);
   transform: scale(0.95);
   box-shadow: 0 0 15px rgba(100, 255, 218, 0.3);
+  animation: pulse 1s infinite;
 }
 .chimp-tile.incorrect,
 .visual-tile.incorrect {
   animation: shake 0.5s;
   background: var(--error);
 }
-.chimp-tile.correct,
-.visual-tile.correct {
+.chimp-tile.correct {
   background: var(--accent);
   transform: scale(0.95);
   box-shadow: 0 0 15px rgba(100, 255, 218, 0.3);
+}
+.visual-tile.correct {
+  background: var(--accent);
+  transform: scale(0.9);
+  pointer-events: none;
 }

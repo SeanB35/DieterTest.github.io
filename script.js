@@ -22,10 +22,12 @@ class DieterBench {
     this.tryCount = 0;
     this.maxTries = 10;
     this.benchmarks = {
-      reaction: [250, 200, 180, 150, 120],
+      reaction: [350, 300, 250, 200, 150],
       click: [5, 7, 9, 11, 13],
       memory: [3, 4, 5, 6, 7],
       math: [10, 20, 30, 40, 50],
+      chimp: [3, 5, 7, 9, 11],  // Levels
+      visual: [4, 6, 8, 10, 12] // Pattern length
     };
     this.memoryStats = {
       totalGames: 0,
@@ -130,11 +132,13 @@ class DieterBench {
       this.newClickTest();
     } else if (newMode === 'memory') {
       this.newMemoryGame();
+      this.updateMemoryProgressBox();
     } else if (newMode === 'math') {
       this.newMathProblem();
     } else if (newMode === 'chimp') {  // Add chimp initialization
       this.chimpLevel = 1;
-      this.startChimpTest();
+  this.chimpInput = [];
+  document.querySelector('.chimp-container').innerHTML = '';
     } else if (newMode === 'visual') {  // Add visual initialization
       this.newVisualGame();
     }
@@ -183,7 +187,11 @@ class DieterBench {
       this.startTime = Date.now();
     }, delay);
   }
-
+  updateMemoryProgressBox() {
+    document.getElementById('memory-correct').textContent = this.memoryStats.correctPatterns;
+    document.getElementById('memory-streak').textContent = this.memoryStats.currentStreak;
+    document.getElementById('memory-points').textContent = this.score;
+  }
   handleReactionClick() {
     // Only allow clicks if the test has started
     if (!this.reactionTestStarted) return;
@@ -396,16 +404,17 @@ class DieterBench {
   }
 
   // ================= MEMORY MODE =================
-setupMemoryGrid() {
-  const grid = document.querySelector('.memory-grid');
-  grid.innerHTML = '';
-  for (let i = 0; i < 16; i++) {
+  setupMemoryGrid() {
+    const grid = document.querySelector('.memory-grid');
+    grid.innerHTML = '';
+    // Create 4x4 grid (16 tiles)
+    for (let i = 0; i < 16; i++) {
       const tile = document.createElement('div');
       tile.className = 'memory-tile';
       tile.dataset.value = i;
       grid.appendChild(tile);
+    }
   }
-}
 
 newMemoryGame() {
   this.memoryPattern = this.generateMemoryPattern();
@@ -413,52 +422,65 @@ newMemoryGame() {
   this.memoryProgress = 0;
   this.isShowingPattern = true;
   this.memoryStats.totalGames++;
-  
+
+  // Clear and regenerate progress bubbles
+  const progress = document.querySelector('#memory-mode .progress-indicator');
+  progress.innerHTML = '';
+  this.memoryPattern.forEach(() => {
+    progress.innerHTML += '<div class="progress-bubble"></div>';
+  });
+
+  // Reset tiles
   document.querySelectorAll('.memory-tile').forEach(tile => {
-      tile.classList.remove('active', 'correct', 'incorrect');
+    tile.classList.remove('active', 'correct', 'incorrect');
   });
   
-  this.showMemoryPattern()
-      .then(() => {
-          this.isShowingPattern = false;
-          this.addMemoryInputListeners();
-      });
+  this.showMemoryPattern().then(() => {
+    this.isShowingPattern = false;
+    this.addMemoryInputListeners();
+  });
 }
 async handleMemoryClick(e) {
   if (this.isShowingPattern) return;
 
   const clickedTile = e.target.closest('.memory-tile');
   if (!clickedTile) return;
-  
+
   const tileIndex = parseInt(clickedTile.dataset.value);
-  const expectedTile = this.memoryPattern[this.userInput.length];
+  const expectedIndex = this.memoryPattern[this.userInput.length];
 
-  clickedTile.classList.add(tileIndex === expectedTile ? 'correct' : 'incorrect');
-
-  if (tileIndex === expectedTile) {
+  // Visual feedback
+  clickedTile.classList.add(tileIndex === expectedIndex ? 'correct' : 'incorrect');
+  
+  if (tileIndex === expectedIndex) {
     this.userInput.push(tileIndex);
-
+    
+    // Update progress
+    document.getElementById('memory-correct').textContent = this.userInput.length;
+    this.memoryStats.currentStreak++;
+    document.getElementById('memory-streak').textContent = this.memoryStats.currentStreak;
+    
+    // Check for complete pattern
     if (this.userInput.length === this.memoryPattern.length) {
+      this.updateScore(50);
       await this.showSuccessFeedback();
-      this.updateScore(25 + (this.memoryPattern.length * 5));
-      this.memoryStats.correctPatterns++;
-      this.memoryStats.currentStreak++;
-      this.memoryStats.longestPattern = Math.max(
-        this.memoryStats.longestPattern, 
-        this.memoryPattern.length
-      );
       this.newMemoryGame();
     }
   } else {
-    await this.showErrorFeedback();
+    // Handle wrong answer
+    this.memoryStats.currentStreak = 0;
+    document.getElementById('memory-streak').textContent = 0;
     this.loseLife();
-    if (this.lives > 0) {
+    await this.showErrorFeedback();
+    
+    if (this.lives.memory > 0) {
       this.newMemoryGame();
     } else {
-      this.showGameOverStats(); // Show memory-specific game over
+      this.showGameOverStats();
     }
   }
 
+  // Clear feedback after delay
   setTimeout(() => {
     clickedTile.classList.remove('correct', 'incorrect');
   }, 500);
@@ -466,21 +488,26 @@ async handleMemoryClick(e) {
 closeMemoryStatsModal() {
   document.getElementById('memory-stats-modal').style.display = 'none';
 }
-
-showMemoryStats() {
-  const modal = document.getElementById('memory-stats-modal');
-  const content = document.getElementById('memoryStatsContent');
+updateMemoryProgress(isCorrect) {
+  const bubbles = document.querySelectorAll('#memory-mode .progress-bubble');
+  const index = this.userInput.length;
+  if (index < bubbles.length) {
+    bubbles[index].classList.add(isCorrect ? 'correct' : 'incorrect');
+  }
+}
+async showMemoryPattern() {
+  const tiles = document.querySelectorAll('.memory-tile');
+  this.removeMemoryInputListeners();
   
-  content.innerHTML = `
-    <div class="memory-stats-grid">
-      <div>Total Games:</div><div>${this.memoryStats.totalGames}</div>
-      <div>Correct Patterns:</div><div>${this.memoryStats.correctPatterns}</div>
-      <div>Longest Pattern:</div><div>${this.memoryStats.longestPattern}</div>
-      <div>Current Streak:</div><div>${this.memoryStats.currentStreak}</div>
-    </div>
-  `;
+  // Flash pattern with clear timing
+  for (const index of this.memoryPattern) {
+    tiles[index].classList.add('active');
+    await new Promise(resolve => setTimeout(resolve, 800));
+    tiles[index].classList.remove('active');
+    await new Promise(resolve => setTimeout(resolve, 200));
+  }
   
-  modal.style.display = 'flex';
+  this.addMemoryInputListeners();
 }
 
 
@@ -501,55 +528,53 @@ resetMemoryGame() {
 }
 
 generateMemoryPattern() {
-  const baseLength = 3; // Starting pattern length
-  const difficultyLevel = Math.floor(this.score / 50); // Increase length every 50 points
-  const patternLength = baseLength + difficultyLevel;
+  const baseLength = 3;
+  const difficultyLevel = Math.floor(this.score / 50);
+  const patternLength = Math.min(baseLength + difficultyLevel, 8); // Max 8 steps
   
   const pattern = [];
   let previousTile = -1;
   
-  for (let i = 0; i < patternLength; i++) {
-      let newTile;
-      do {
-          newTile = Math.floor(Math.random() * 16);
-      } while (newTile === previousTile); // Prevent consecutive duplicates
-      
+  while (pattern.length < patternLength) {
+    const newTile = Math.floor(Math.random() * 16);
+    if (newTile !== previousTile) {
       pattern.push(newTile);
       previousTile = newTile;
+    }
   }
-  
   return pattern;
 }
 
 async showMemoryPattern() {
   const tiles = document.querySelectorAll('.memory-tile');
-  this.removeMemoryInputListeners();
+  this.removeMemoryInputListeners(); // Ensure listeners are off during pattern display
   
-  // Show all pattern tiles at once
-  this.memoryPattern.forEach(index => {
+  // Clear any existing active states
+  tiles.forEach(tile => tile.classList.remove('active'));
+  
+  // Show pattern with clear timing
+  for (const index of this.memoryPattern) {
     tiles[index].classList.add('active');
-  });
-  
-  await new Promise(resolve => setTimeout(resolve, 2000));
-  
-  // Hide all tiles
-  this.memoryPattern.forEach(index => {
+    await new Promise(resolve => setTimeout(resolve, 800));
     tiles[index].classList.remove('active');
-  });
+    await new Promise(resolve => setTimeout(resolve, 200));
+  }
   
+  // Reset user input and enable interaction
+  this.userInput = [];
   this.addMemoryInputListeners();
 }
 
 addMemoryInputListeners() {
   this.memoryClickHandler = (e) => this.handleMemoryClick(e);
   document.querySelectorAll('.memory-tile').forEach(tile => {
-      tile.addEventListener('click', this.memoryClickHandler);
+    tile.addEventListener('click', this.memoryClickHandler);
   });
 }
 
 removeMemoryInputListeners() {
   document.querySelectorAll('.memory-tile').forEach(tile => {
-      tile.removeEventListener('click', this.memoryClickHandler);
+    tile.removeEventListener('click', this.memoryClickHandler);
   });
 }
 
@@ -557,7 +582,7 @@ handleMemoryClick(e) {
   if (this.isShowingPattern) return;
   
   const clickedTile = e.target.closest('.memory-tile');
-  const tileIndex = parseInt(clickedTile.dataset.value);
+  clickedTile.classList.add('active');
   
   if (this.memoryPattern.includes(tileIndex)) {
     if (!this.userInput.includes(tileIndex)) {
@@ -582,23 +607,30 @@ handleMemoryClick(e) {
 }
 
 async showSuccessFeedback() {
-  const tiles = document.querySelectorAll('.memory-tile');
-  for (const tile of tiles) {
-      tile.classList.add('correct');
-      await new Promise(resolve => setTimeout(resolve, 50));
-      tile.classList.remove('correct');
-  }
+  await Promise.all(
+    [...document.querySelectorAll('.memory-tile')].map((tile, i) => 
+      new Promise(resolve => {
+        if (this.memoryPattern.includes(parseInt(tile.dataset.value))) {
+          setTimeout(() => {
+            tile.classList.add('correct');
+            resolve();
+          }, i * 50);
+        }
+      })
+  ));
+  
+  await new Promise(resolve => setTimeout(resolve, 500));
+  document.querySelectorAll('.memory-tile').forEach(t => t.classList.remove('correct'));
 }
 
 async showErrorFeedback() {
-  const tiles = document.querySelectorAll('.memory-tile');
-  for (const tile of tiles) {
-      tile.classList.add('incorrect');
-  }
+  document.querySelectorAll('.memory-tile').forEach(tile => {
+    if (this.memoryPattern.includes(parseInt(tile.dataset.value))) {
+      tile.classList.add('correct');
+    }
+  });
   await new Promise(resolve => setTimeout(resolve, 1000));
-  for (const tile of tiles) {
-      tile.classList.remove('incorrect');
-  }
+  document.querySelectorAll('.memory-tile').forEach(t => t.classList.remove('correct'));
 }
 
   // ================= MATH MODE =================
@@ -699,40 +731,36 @@ async showErrorFeedback() {
   }
   // ================= CHIMP TEST =================
   startChimpTest() {
-    this.chimpSequence = this.generateChimpSequence();
-    this.createChimpGrid();
-    this.showChimpNumbers();
-  }
+  this.chimpInput = [];
+  this.chimpSequence = this.generateChimpSequence();
+  this.createChimpGrid();
+  this.showChimpNumbers();
+  document.getElementById('start-chimp-test').style.display = 'none';
+}
   createChimpGrid() {
-    const grid = document.querySelector('.chimp-grid');
-    grid.innerHTML = '';
+    const container = document.querySelector('.chimp-container');
+    container.innerHTML = '';
     
-    // Create 5x5 grid (25 tiles)
+    // Create 5x5 grid
     for (let i = 0; i < 25; i++) {
       const tile = document.createElement('div');
       tile.className = 'chimp-tile';
-      grid.appendChild(tile);
+      container.appendChild(tile);
     }
   }
   generateChimpSequence() {
     const sequence = [];
     const count = this.chimpLevel + 2;
-    const positions = new Set();
-  
-    while (positions.size < count) {
-      positions.add(
-        `${Math.floor(Math.random() * 550)}px, ${Math.floor(Math.random() * 350)}px`
-      );
+    const indexes = new Set();
+    
+    while (indexes.size < count) {
+      indexes.add(Math.floor(Math.random() * 25));
     }
-  
-    Array.from(positions).forEach((pos, index) => {
-      sequence.push({
-        number: index + 1,
-        position: pos
-      });
-    });
-  
-    return sequence;
+    
+    return Array.from(indexes).map((index, i) => ({
+      number: i + 1,
+      index: index
+    }));
   }
   
   async showChimpNumbers() {
@@ -761,19 +789,32 @@ async showErrorFeedback() {
   }
   
   handleChimpClick(e) {
-    const clickedNumber = parseInt(e.target.textContent);
-    const expectedNumber = this.chimpSequence[this.visualInput.length].number;
+    const tile = e.target.closest('.chimp-tile');
+    if (!tile || !tile.textContent) return;
+  
+    const clickedNumber = parseInt(tile.textContent);
+    const expectedNumber = this.chimpSequence[this.chimpInput.length].number;
   
     if (clickedNumber === expectedNumber) {
+      tile.classList.add('correct');
       this.chimpInput.push(clickedNumber);
-      if (this.visualInput.length === this.chimpSequence.length) {
+      
+      if (this.chimpInput.length === this.chimpSequence.length) {
         this.chimpLevel++;
         this.updateScore(50 * this.chimpLevel);
         this.startChimpTest();
       }
     } else {
+      tile.classList.add('incorrect');
       this.loseLife();
-      this.showChimpResults();
+      setTimeout(() => {
+        tile.classList.remove('incorrect');
+        if (this.lives.chimp > 0) {
+          this.startChimpTest();
+        } else {
+          this.showChimpResults();
+        }
+      }, 1000);
     }
   }
   
@@ -851,57 +892,58 @@ updateVisualProgress(isCorrect = true) {
 }
 handleVisualClick(e) {
   const clickedTile = e.target.closest('.visual-tile');
-  if (!clickedTile) return; // Safety check
-  
-  const tileIndex = Array.from(document.querySelectorAll('.visual-tile')).indexOf(clickedTile);
-  
-  // Correct tile clicked
-  if (this.visualPattern.includes(tileIndex)) {
-    if (!this.visualInput.includes(tileIndex)) {
-      this.visualInput.push(tileIndex);
+  if (!clickedTile) return;
+
+  const tiles = document.querySelectorAll('.visual-tile');
+  const tileIndex = Array.from(tiles).indexOf(clickedTile);
+  const expectedIndex = this.visualPattern[this.visualInput.length];
+
+  // Correct tile in correct order
+  if (tileIndex === expectedIndex) {
+    clickedTile.classList.add('correct');
+    clickedTile.style.pointerEvents = 'none';
+    this.visualInput.push(tileIndex);
+
+    // Update progress bubbles
+    this.updateVisualProgress(true);
+
+    // Check if pattern is complete
+    if (this.visualInput.length === this.visualPattern.length) {
+      // Calculate points based on pattern length and streak
+      const pointsEarned = 50 + (this.visualPattern.length * 10);
+      this.updateScore(pointsEarned);
       
-      // Visual feedback for correct selection
-      clickedTile.classList.add('correct');
-      setTimeout(() => {
-        clickedTile.classList.remove('correct');
-        clickedTile.classList.add('active');
-      }, 500);
+      // Success animation
+      tiles.forEach(tile => {
+        tile.classList.add('correct');
+        setTimeout(() => tile.classList.remove('correct'), 500);
+      });
       
-      // Check if pattern is complete
-      if (this.visualInput.length === this.visualPattern.length) {
-        // Success animation
-        document.querySelectorAll('.visual-tile').forEach(tile => {
-          tile.classList.add('correct');
-        });
-        setTimeout(() => {
-          this.updateScore(50 + (this.visualPattern.length * 5));
-          this.newVisualGame();
-        }, 1000);
-      }
+      setTimeout(() => this.newVisualGame(), 1000);
     }
-    this.updateVisualProgress();
+    document.getElementById('visual-correct').textContent = this.visualInput.length;
+  document.getElementById('visual-streak').textContent = this.visualInput.length;
+  document.getElementById('visual-points').textContent = this.score;
   } 
-  // Incorrect tile clicked
+  // Wrong tile or wrong order
   else {
-    // Visual feedback for error
+    // Visual feedback
     clickedTile.classList.add('incorrect');
     setTimeout(() => clickedTile.classList.remove('incorrect'), 500);
-    
-    // Shake animation for all tiles
-    document.querySelectorAll('.visual-tile').forEach(tile => {
-      tile.classList.add('shake');
-      setTimeout(() => tile.classList.remove('shake'), 500);
-    });
-    
+
+    // Update progress bubbles
+    this.updateVisualProgress(false);
+
+    // Deduct life
     this.loseLife();
-    
+
     // Reset if lives remain
     if (this.lives.visual > 0) {
       setTimeout(() => this.newVisualGame(), 1000);
     } else {
       this.showVisualResults();
     }
-    this.updateVisualProgress(false);
+    document.getElementById('visual-streak').textContent = '0';
   }
 }
 
@@ -948,19 +990,36 @@ closeVisualModal() {
 
   showGameOverStats() {
     const modal = document.getElementById('memory-stats-modal');
-    const statsHTML = `
-      <h2>💀 Game Over!</h2>
+    const content = document.getElementById('memoryStatsContent');
+    
+    content.innerHTML = `
+      <h2 style="color: var(--accent); text-align: center; margin-bottom: 1.5rem;">Game Over</h2>
       <div class="memory-stats-grid">
         <div>Final Score:</div><div>${this.score}</div>
         <div>Longest Pattern:</div><div>${this.memoryStats.longestPattern}</div>
         <div>Correct Patterns:</div><div>${this.memoryStats.correctPatterns}</div>
+        <div>Current Streak:</div><div>${this.memoryStats.currentStreak}</div>
         <div>Total Games:</div><div>${this.memoryStats.totalGames}</div>
+        <div>Accuracy:</div><div>${this.memoryStats.totalGames > 0 
+          ? Math.round((this.memoryStats.correctPatterns / this.memoryStats.totalGames) * 100) 
+          : 0}%</div>
       </div>
-      <button onclick="game.resetGame()">Try Again</button>
+      <button id="restartMemoryGame" 
+              style="margin-top: 1.5rem; padding: 0.8rem; width: 100%; 
+                     background: var(--secondary); color: var(--text);
+                     border: none; border-radius: 8px; cursor: pointer;
+                     transition: all 0.2s ease;">
+        Play Again
+      </button>
     `;
     
-    modal.querySelector('.modal-content').innerHTML = statsHTML;
     modal.style.display = 'flex';
+    
+    // Add event listener for the restart button
+    document.getElementById('restartMemoryGame').addEventListener('click', () => {
+      this.resetGame();
+      modal.style.display = 'none';
+    });
   }
 
   resetGame() {
@@ -1000,53 +1059,101 @@ closeVisualModal() {
 
   showPercentile(mode, value) {
     const benchmarks = this.benchmarks[mode];
-    let percentile = 0;
-    benchmarks.forEach((threshold, index) => {
-      if (value > threshold) {
-        percentile = (index + 1) * 20;
+    let percentile = 100;
+    
+    for (let i = 0; i < benchmarks.length; i++) {
+      if (value > benchmarks[i]) {
+        percentile = 100 - ((i + 1) * 15);
+        break;
       }
-    });
+    }
+    
     this.createChart(mode, percentile);
   }
 
   createChart(mode, percentile) {
     const ctx = document.getElementById('percentileChart');
-    new Chart(ctx, {
+    
+    // Destroy previous chart if it exists
+    if (this.chartInstance) {
+      this.chartInstance.destroy();
+    }
+  
+    const modeLabels = {
+      reaction: 'Reaction Time (ms)',
+      click: 'Click Speed (CPS)',
+      memory: 'Memory Pattern Length',
+      math: 'Math Problems Solved',
+      chimp: 'Chimp Test Level',
+      visual: 'Visual Pattern Length'
+    };
+  
+    this.chartInstance = new Chart(ctx, {
       type: 'bar',
       data: {
-        labels: ['Your Performance'],
+        labels: [modeLabels[mode]],
         datasets: [{
-          label: `Percentile (Top ${100 - percentile}%)`,
+          label: `Your Performance (Top ${percentile}%)`,
           data: [percentile],
-          backgroundColor: 'rgba(100, 255, 218, 0.5)',
+          backgroundColor: 'rgba(100, 255, 218, 0.7)',
           borderColor: 'var(--accent)',
           borderWidth: 2,
-        }],
+          borderRadius: 6,
+          borderSkipped: false
+        }]
       },
       options: {
+        responsive: true,
+        indexAxis: 'y',
         scales: {
-          y: {
+          x: {
             beginAtZero: true,
             max: 100,
             ticks: {
               color: 'var(--text)',
               callback: (value) => value + '%',
+              font: {
+                family: "'Fira Code', monospace",
+                size: 12
+              }
             },
+            grid: {
+              color: 'rgba(204, 214, 246, 0.1)'
+            }
           },
-          x: {
+          y: {
             ticks: {
               color: 'var(--text)',
+              font: {
+                family: "'Fira Code', monospace",
+                size: 14
+              }
             },
-          },
+            grid: {
+              display: false
+            }
+          }
         },
         plugins: {
           legend: {
-            labels: {
-              color: 'var(--text)',
-            },
+            display: false
           },
+          tooltip: {
+            callbacks: {
+              label: (context) => {
+                return `Top ${context.raw}% of players`;
+              }
+            },
+            bodyFont: {
+              family: "'Fira Code', monospace"
+            }
+          }
         },
-      },
+        animation: {
+          duration: 1000,
+          easing: 'easeOutQuart'
+        }
+      }
     });
   }
 }
