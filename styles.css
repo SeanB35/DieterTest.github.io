@@ -140,10 +140,6 @@ body {
   pointer-events: auto; /* Enable clicks only when active */
 }
 
-.memory-tile.active {
-  background: var(--accent);
-  transition: background 0.5s ease;
-}
 
 /* Sequence Game Styles */
 .sequence-grid {
@@ -415,7 +411,12 @@ margin-top: 10px;
   transform: scale(0.95);
   box-shadow: 0 0 15px rgba(100, 255, 218, 0.5);
   transition: all 0.3s ease;
-  animation: pulse 0.5s ease;
+  pointer-events: none;
+}
+
+.memory-tile.active {
+  background: var(--accent) !important;
+  opacity: 0.8;
 }
 
 .memory-tile.incorrect {
