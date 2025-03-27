@@ -10,13 +10,73 @@
   <div class="container">
     <h1 class="title">DieterBench</h1>
 
-    <div class="mode-selector">
-      <button class="mode-btn active" data-mode="reaction">⚡ Reaction</button>
-      <button class="mode-btn" data-mode="click">👆 Click Speed</button>
-      <button class="mode-btn" data-mode="memory">🧠 Memory</button>
-      <button class="mode-btn" data-mode="math">➗ Math</button>
-      <button class="mode-btn" data-mode="chimp">🐒 Chimp Test</button>
-      <button class="mode-btn" data-mode="visual">👀 Visual Memory</button>
+    <div class="hamburger-menu">
+      <input id="menu-toggle" type="checkbox" />
+      <label class="menu-btn" for="menu-toggle">
+        <span></span>
+      </label>
+      <ul class="menu-box">
+        <li class="menu-item speed-btn">
+          <span>Speed</span>
+          <ul class="submenu">
+            <li data-mode="reaction">Reaction Time</li>
+            <li data-mode="click">Click Speed</li>
+          </ul>
+        </li>
+        <li class="menu-item memory-btn">
+          <span>Memory</span>
+          <ul class="submenu">
+            <li data-mode="memory">Memory Game</li>
+            <li data-mode="visual">Visual Memory</li>
+            <li data-mode="chimp">Chimp Test</li>
+          </ul>
+        </li>
+        <li class="menu-item logic-btn">
+          <span>Logic</span>
+          <ul class="submenu">
+            <li data-mode="math" data-op="mixed">Mixed Math</li>
+            <li data-mode="math" data-op="+">Addition</li>
+            <li data-mode="math" data-op="-">Subtraction</li>
+            <li data-mode="math" data-op="×">Multiplication</li>
+            <li data-mode="math" data-op="÷">Division</li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+
+    <div class="home-screen active">
+      <div class="categories-container">
+        <!-- Speed Category -->
+        <div class="category-card speed-category">
+          <h2>⚡ Speed</h2>
+          <div class="mode-options">
+            <div class="mode-option" data-mode="reaction">Reaction Time</div>
+            <div class="mode-option" data-mode="click">Click Speed</div>
+          </div>
+        </div>
+        
+        <!-- Memory Category -->
+        <div class="category-card memory-category">
+          <h2>🧠 Memory</h2>
+          <div class="mode-options">
+            <div class="mode-option" data-mode="memory">Memory Game</div>
+            <div class="mode-option" data-mode="visual">Visual Memory</div>
+            <div class="mode-option" data-mode="chimp">Chimp Test</div>
+          </div>
+        </div>
+        
+        <!-- Logic Category -->
+        <div class="category-card logic-category">
+          <h2>🔢 Logic</h2>
+          <div class="mode-options">
+            <div class="mode-option" data-mode="math" data-op="mixed">Mixed Math</div>
+            <div class="mode-option" data-mode="math" data-op="+">Addition</div>
+            <div class="mode-option" data-mode="math" data-op="-">Subtraction</div>
+            <div class="mode-option" data-mode="math" data-op="×">Multiplication</div>
+            <div class="mode-option" data-mode="math" data-op="÷">Division</div>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div class="game-container">
@@ -94,6 +154,8 @@
           <p>Points: <span id="math-points">0</span></p>
         </div>
       </div>
+
+      <button id="back-to-home" class="back-button">← Back to Home</button>
 
       <div class="score-board">
         <div class="score">Score: <span id="score">0</span></div>

@@ -54,9 +54,10 @@ class DieterBench {
     this.setupEventListeners();
     this.setupMathMode();
     this.setupMemoryGrid();
-    this.switchMode('reaction');
+    this.setupHomeScreen(); // Add this
     this.updateRank();
-    this.setupModalListeners(); // Add this
+    this.setupModalListeners();
+    this.setupHamburgerMenu();
   }
 
   setupEventListeners() {
@@ -100,8 +101,70 @@ class DieterBench {
   document.getElementById('closeVisualModalBtn')?.addEventListener('click', () => this.closeVisualModal());
   }
 
+  setupHamburgerMenu() {
+    // Handle clicks on menu items
+    document.querySelectorAll('.menu-box li[data-mode]').forEach(item => {
+      item.addEventListener('click', (e) => {
+        const mode = e.target.dataset.mode;
+        const op = e.target.dataset.op;
+        
+        // Uncheck the menu toggle to close the menu
+        document.getElementById('menu-toggle').checked = false;
+        
+        this.switchMode(mode);
+        
+        // If it's a math operation, set that too
+        if (op) {
+          this.setMathOperation(op);
+        }
+      });
+    });
+    
+    // Close menu when clicking outside - FIXED THE SYNTAX ERROR HERE
+    document.addEventListener('click', (e) => {
+      const menu = document.querySelector('.hamburger-menu');
+      if (!menu.contains(e.target)) {
+        document.getElementById('menu-toggle').checked = false;
+      }
+    });
+  }
+
+  setupHomeScreen() {
+    // Set up click handlers for mode options
+    document.querySelectorAll('.mode-option').forEach(option => {
+      option.addEventListener('click', (e) => {
+        const mode = e.target.dataset.mode;
+        const op = e.target.dataset.op;
+        
+        // Hide home screen
+        document.querySelector('.home-screen').classList.remove('active');
+        
+        // Show game container
+        document.querySelector('.game-container').style.display = 'block';
+        
+        // Switch to selected mode
+        this.switchMode(mode);
+        
+        // If it's a math operation, set that too
+        if (op) {
+          this.setMathOperation(op);
+        }
+      });
+    });
+    
+    // Add back button functionality (you'll need to add a back button to your UI)
+    document.getElementById('back-to-home')?.addEventListener('click', () => {
+      document.querySelector('.home-screen').classList.add('active');
+      document.querySelector('.game-container').style.display = 'none';
+    });
+  }
+
   switchMode(newMode) {
     // Add these lines for cleanup
+
+    document.querySelector('.home-screen').classList.remove('active');
+    document.querySelector('.game-container').style.display = 'block';
+
     if (this.currentMode === 'click') {
       document.removeEventListener('click', this.handleClickTestBound);
       clearTimeout(this.clickTimer);
