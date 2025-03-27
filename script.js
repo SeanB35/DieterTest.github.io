@@ -470,11 +470,12 @@ class DieterBench {
   setupMemoryGrid() {
     const grid = document.querySelector('.memory-grid');
     grid.innerHTML = '';
-    for (let i = 0; i < 16; i++) {
-        const tile = document.createElement('div');
-        tile.className = 'memory-tile';
-        tile.dataset.value = i;
-        grid.appendChild(tile);
+    // Create 5x5 grid (25 tiles)
+    for (let i = 0; i < 25; i++) {
+      const tile = document.createElement('div');
+      tile.className = 'memory-tile';
+      tile.dataset.value = i;
+      grid.appendChild(tile);
     }
   }
   
@@ -533,40 +534,7 @@ class DieterBench {
       if (this.lives.memory > 0) this.newMemoryGame();
     }, 1000);
   }
-  async handleMemoryClick(e) {
-    if (this.isShowingPattern) return;
   
-    const clickedTile = e.target.closest('.memory-tile');
-    const tileIndex = parseInt(clickedTile.dataset.value);
-    const expectedTile = this.memoryPattern[this.userInput.length];
-  
-    clickedTile.classList.add(tileIndex === expectedTile ? 'correct' : 'incorrect');
-  
-    if (tileIndex === expectedTile) {
-      this.userInput.push(tileIndex);
-  
-      if (this.userInput.length === this.memoryPattern.length) {
-        await this.showSuccessFeedback();
-        this.updateScore(25 + (this.memoryPattern.length * 5));
-        this.memoryStats.correctPatterns++;
-        this.memoryStats.currentStreak++;
-        this.memoryStats.longestPattern = Math.max(
-          this.memoryStats.longestPattern, 
-          this.memoryPattern.length
-        );
-        this.newMemoryGame();
-      }
-    } else {
-      await this.showErrorFeedback();
-      this.loseLife();
-      if (this.lives > 0) this.newMemoryGame();
-    }
-  
-    setTimeout(() => {
-      clickedTile.classList.remove('correct', 'incorrect');
-    }, 500);
-  
-  }
   
   showMemoryStats() {
     const modal = document.getElementById('memory-stats-modal');
@@ -603,10 +571,10 @@ class DieterBench {
   
   generateMemoryPattern() {
     const pattern = [];
-    const targetLength = 3 + Math.floor(this.memoryStats.correctPatterns / 3);
+    const targetLength = 3 + Math.floor(this.memoryStats.correctPatterns / 2);
     
     while (pattern.length < targetLength) {
-      const randomIndex = Math.floor(Math.random() * 16);
+      const randomIndex = Math.floor(Math.random() * 25); // 0-24
       if (!pattern.includes(randomIndex)) {
         pattern.push(randomIndex);
       }
@@ -654,17 +622,18 @@ class DieterBench {
     const clickedTile = e.target.closest('.memory-tile');
     const tileIndex = parseInt(clickedTile.dataset.value);
     
-    // Check if the clicked tile is in the pattern
-    const isInPattern = this.memoryPattern.includes(tileIndex);
-    // Check if it's already been correctly clicked
-    const alreadySelected = this.userInput.includes(tileIndex);
+    // Check if already selected or incorrect
+    if (clickedTile.classList.contains('correct') || 
+        clickedTile.classList.contains('incorrect')) return;
   
-    if (isInPattern && !alreadySelected) {
-      // Correct selection
+    // Check if tile is in pattern
+    const isCorrect = this.memoryPattern.includes(tileIndex);
+  
+    if (isCorrect) {
       clickedTile.classList.add('correct');
       this.userInput.push(tileIndex);
   
-      // Check if all pattern tiles have been selected
+      // Check if all pattern tiles found
       if (this.userInput.length === this.memoryPattern.length) {
         await this.showSuccessFeedback();
         this.memoryStats.correctPatterns++;
@@ -677,7 +646,6 @@ class DieterBench {
         this.newMemoryGame();
       }
     } else {
-      // Incorrect selection
       clickedTile.classList.add('incorrect');
       this.loseLife();
       await this.showErrorFeedback();
@@ -809,20 +777,26 @@ class DieterBench {
   }
   // ================= CHIMP TEST =================
   startChimpTest() {
-  this.chimpInput = [];
-  this.chimpSequence = this.generateChimpSequence();
-  this.createChimpGrid();
-  this.showChimpNumbers();
-  document.getElementById('start-chimp-test').style.display = 'none';
-}
+    // Remove previous click listeners
+    if (this.chimpClickHandler) {
+      document.querySelector('.chimp-container').removeEventListener('click', this.chimpClickHandler);
+    }
+    
+    this.chimpInput = [];
+    this.chimpSequence = this.generateChimpSequence();
+    this.createChimpGrid();
+    this.showChimpNumbers();
+  }
   createChimpGrid() {
     const container = document.querySelector('.chimp-container');
     container.innerHTML = '';
     
-    // Create 5x5 grid
+    // Create grid based on current level
+    const gridSize = Math.min(5 + Math.floor(this.chimpLevel/2), 5); // Max 5x5 grid
     for (let i = 0; i < 25; i++) {
       const tile = document.createElement('div');
       tile.className = 'chimp-tile';
+      tile.dataset.index = i;
       container.appendChild(tile);
     }
   }
@@ -835,16 +809,25 @@ class DieterBench {
       indexes.add(Math.floor(Math.random() * 25));
     }
     
-    return Array.from(indexes).map((index, i) => ({
-      number: i + 1,
-      index: index
-    }));
+    // Create array with numbers 1-count and sort them
+    return Array.from(indexes)
+      .map((index, i) => ({
+        number: i + 1,
+        index: index
+      }))
+      .sort((a, b) => a.number - b.number); // Add sorting
   }
   
   async showChimpNumbers() {
     const tiles = document.querySelectorAll('.chimp-tile');
     
-    // Show numbers in random tiles
+    // Reset tiles
+    tiles.forEach(tile => {
+      tile.classList.remove('correct', 'incorrect');
+      tile.style.pointerEvents = 'none'; // Disable during show
+    });
+  
+    // Show numbers
     this.chimpSequence.forEach(({ index, number }) => {
       tiles[index].textContent = number;
       tiles[index].classList.add('active');
@@ -852,47 +835,61 @@ class DieterBench {
   
     await new Promise(resolve => setTimeout(resolve, 2000));
     
-    // Hide numbers but keep tiles visible
+    // Hide numbers and enable clicks
     tiles.forEach(tile => {
       tile.textContent = '';
       tile.classList.remove('active');
+      tile.style.pointerEvents = 'auto'; // Re-enable after hide
     });
     
     this.addChimpListeners();
   }
   
   addChimpListeners() {
+    // Clear any existing listeners first
+    if (this.chimpClickHandler) {
+      document.querySelector('.chimp-container').removeEventListener('click', this.chimpClickHandler);
+    }
+    
     this.chimpClickHandler = (e) => this.handleChimpClick(e);
     document.querySelector('.chimp-container').addEventListener('click', this.chimpClickHandler);
   }
   
   handleChimpClick(e) {
     const tile = e.target.closest('.chimp-tile');
-    if (!tile || !tile.textContent) return;
+    if (!tile || tile.classList.contains('correct')) return;
   
-    const clickedNumber = parseInt(tile.textContent);
-    const expectedNumber = this.chimpSequence[this.chimpInput.length].number;
+    const clickedIndex = parseInt(tile.dataset.index);
+    const currentStep = this.chimpInput.length;
+    const expectedTile = this.chimpSequence[currentStep];
   
-    if (clickedNumber === expectedNumber) {
+    if (!expectedTile) return;
+  
+    if (clickedIndex === expectedTile.index) {
       tile.classList.add('correct');
-      this.chimpInput.push(clickedNumber);
-      
+      this.chimpInput.push(clickedIndex);
+  
       if (this.chimpInput.length === this.chimpSequence.length) {
-        this.chimpLevel++;
         this.updateScore(50 * this.chimpLevel);
-        this.startChimpTest();
+        document.getElementById('chimp-points').textContent = this.score;
+        this.chimpLevel++;
+        document.getElementById('chimp-level').textContent = this.chimpLevel;
+        
+        // Delay next round to allow visual feedback
+        setTimeout(() => {
+          this.startChimpTest();
+        }, 1000);
       }
     } else {
       tile.classList.add('incorrect');
-      this.loseLife();
-      setTimeout(() => {
-        tile.classList.remove('incorrect');
-        if (this.lives.chimp > 0) {
-          this.startChimpTest();
-        } else {
-          this.showChimpResults();
-        }
-      }, 1000);
+      this.lives.chimp--;
+      document.getElementById('chimp-lives').textContent = this.lives.chimp;
+  
+      if (this.lives.chimp > 0) {
+        setTimeout(() => this.startChimpTest(), 1000);
+      } else {
+        this.showChimpResults();
+      }
     }
   }
   
