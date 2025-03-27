@@ -424,7 +424,10 @@ margin-top: 10px;
 
 .memory-tile.active {
   background: var(--accent) !important;
-  opacity: 0.8;
+  opacity: 1 !important;
+  transform: scale(0.95);
+  box-shadow: 0 0 20px rgba(100, 255, 218, 0.5);
+  transition: all 0.3s ease;
 }
 
 .memory-tile.incorrect {
