@@ -128,7 +128,7 @@ body {
 /* Memory Game Styles */
 .memory-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 1rem;
   max-width: 500px;
   margin: 0 auto;
@@ -401,7 +401,11 @@ margin-top: 10px;
 .game-mode:not(.active) #click-mode {
   display: none !important;
 }
-
+.visual-tile.correct-pattern {
+  background: #4CAF50 !important;
+  transform: scale(0.9);
+  box-shadow: 0 0 15px rgba(76, 175, 80, 0.5);
+}
 /* Modal close button fix */
 .click-modal-content button {
   background: var(--secondary) !important;
@@ -412,7 +416,14 @@ margin-top: 10px;
   background: var(--accent) !important;
   color: var(--primary) !important;
 }
-
+/* Add chimp correction style */
+.chimp-tile.correct-pattern {
+  background: #4CAF50 !important;
+  color: var(--primary) !important;
+  transform: scale(0.95);
+  box-shadow: 0 0 15px rgba(76, 175, 80, 0.5);
+  animation: pulse 1s infinite;
+}
 /* Memory Game Improvements */
 .memory-tile.correct {
   background: var(--accent) !important;
@@ -421,7 +432,11 @@ margin-top: 10px;
   transition: all 0.3s ease;
   pointer-events: none;
 }
-
+.memory-tile.correct-pattern {
+  background: #4CAF50 !important;
+  opacity: 0.6;
+  box-shadow: 0 0 15px rgba(76, 175, 80, 0.4);
+}
 .memory-tile.active {
   background: var(--accent) !important;
   opacity: 1 !important;

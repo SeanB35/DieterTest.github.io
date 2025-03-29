@@ -648,13 +648,22 @@ class DieterBench {
     } else {
       clickedTile.classList.add('incorrect');
       this.loseLife();
-      await this.showErrorFeedback();
       
+      // Show correct pattern before restarting
+      const tiles = document.querySelectorAll('.memory-tile');
+      this.memoryPattern.forEach(index => {
+        tiles[index].classList.add('correct-pattern');
+      });
+  
+      await new Promise(resolve => setTimeout(resolve, 1500));
+  
+      // Remove all feedback
+      tiles.forEach(tile => {
+        tile.classList.remove('incorrect', 'correct-pattern');
+      });
+  
       if (this.lives.memory > 0) {
-        setTimeout(() => {
-          clickedTile.classList.remove('incorrect');
-          this.newMemoryGame();
-        }, 1000);
+        setTimeout(() => this.newMemoryGame(), 500);
       }
     }
   }
@@ -833,7 +842,9 @@ class DieterBench {
       tiles[index].classList.add('active');
     });
   
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    const baseTime = 2000;
+const levelTime = this.chimpLevel * 500; // 500ms extra per level
+await new Promise(resolve => setTimeout(resolve, baseTime + levelTime));
     
     // Hide numbers and enable clicks
     tiles.forEach(tile => {
@@ -855,7 +866,7 @@ class DieterBench {
     document.querySelector('.chimp-container').addEventListener('click', this.chimpClickHandler);
   }
   
-  handleChimpClick(e) {
+  async handleChimpClick(e) {
     const tile = e.target.closest('.chimp-tile');
     if (!tile || tile.classList.contains('correct')) return;
   
@@ -866,6 +877,7 @@ class DieterBench {
     if (!expectedTile) return;
   
     if (clickedIndex === expectedTile.index) {
+      // Existing correct answer handling
       tile.classList.add('correct');
       this.chimpInput.push(clickedIndex);
   
@@ -875,18 +887,43 @@ class DieterBench {
         this.chimpLevel++;
         document.getElementById('chimp-level').textContent = this.chimpLevel;
         
-        // Delay next round to allow visual feedback
         setTimeout(() => {
           this.startChimpTest();
         }, 1000);
       }
     } else {
+      // New feedback logic for incorrect answers
+      const tiles = document.querySelectorAll('.chimp-tile');
+      
+      // Disable clicks during feedback
+      tiles.forEach(t => t.style.pointerEvents = 'none');
+      
+      // Show incorrect feedback
       tile.classList.add('incorrect');
+      
+      // Reveal correct sequence with numbers
+      this.chimpSequence.forEach(({ index, number }) => {
+        const correctTile = tiles[index];
+        correctTile.textContent = number;
+        correctTile.classList.add('correct-pattern');
+      });
+  
+      // Wait for feedback display
+      await new Promise(resolve => setTimeout(resolve, 2000));
+  
+      // Reset tiles and lives
+      tiles.forEach(t => {
+        t.textContent = '';
+        t.classList.remove('correct-pattern', 'incorrect');
+      });
+  
       this.lives.chimp--;
       document.getElementById('chimp-lives').textContent = this.lives.chimp;
   
       if (this.lives.chimp > 0) {
-        setTimeout(() => this.startChimpTest(), 1000);
+        // Re-enable clicks for new round
+        tiles.forEach(t => t.style.pointerEvents = 'auto');
+        setTimeout(() => this.startChimpTest(), 500);
       } else {
         this.showChimpResults();
       }
@@ -965,7 +1002,7 @@ updateVisualProgress(isCorrect = true) {
     bubbles[index].classList.add(isCorrect ? 'correct' : 'incorrect');
   }
 }
-handleVisualClick(e) {
+async handleVisualClick(e) {
   const clickedTile = e.target.closest('.visual-tile');
   if (!clickedTile) return;
 
@@ -997,14 +1034,25 @@ handleVisualClick(e) {
       setTimeout(() => this.newVisualGame(), 1000);
     }
     document.getElementById('visual-correct').textContent = this.visualInput.length;
-  document.getElementById('visual-streak').textContent = this.visualInput.length;
-  document.getElementById('visual-points').textContent = this.score;
+    document.getElementById('visual-streak').textContent = this.visualInput.length;
+    document.getElementById('visual-points').textContent = this.score;
   } 
   // Wrong tile or wrong order
   else {
     // Visual feedback
     clickedTile.classList.add('incorrect');
-    setTimeout(() => clickedTile.classList.remove('incorrect'), 500);
+    
+    // Show correct pattern
+    this.visualPattern.forEach(index => {
+      tiles[index].classList.add('correct-pattern');
+    });
+
+    await new Promise(resolve => setTimeout(resolve, 1500));
+
+    // Remove feedback
+    tiles.forEach(tile => {
+      tile.classList.remove('incorrect', 'correct-pattern');
+    });
 
     // Update progress bubbles
     this.updateVisualProgress(false);
